@@ -24,8 +24,8 @@ class GuiApplication(wx.App):
             self.root_frame.SetIcon(icon)
 
         # Set window minimum size
-        min_size = wx.DisplaySize()
-        self.root_frame.SetMinSize(min_size)
+        x, y = wx.DisplaySize()
+        self.root_frame.SetMinSize((x // 2, y // 2))
 
         # Set window size
         size = self.environment.get("application", {}).get("size", {}).get("width", 800), self.environment.get("application", {}).get("size", {}).get("height", 600)
@@ -101,17 +101,17 @@ class GuiApplication(wx.App):
         return True
 
     def __setup_status_bar(self):
-        self.status_bar = self.root_frame.CreateStatusBar()
+        self.environment['status_bar'] = self.root_frame.CreateStatusBar()
 
         # Create a space to display running sub-processes
-        self.status_bar.SetFieldsCount(2)
-        self.status_bar.SetStatusWidths([-1, 100])
+        self.environment['status_bar'].SetFieldsCount(2)
+        self.environment['status_bar'].SetStatusWidths([-1, 200])
 
         # Set the default text for the status bar
-        self.status_bar.SetStatusText("Ready", 0)
+        self.environment['status_bar'].SetStatusText("Ready", 0)
 
         # Set the default text for the sub-processes
-        self.status_bar.SetStatusText("No sub-processes running", 1)
+        self.environment['status_bar'].SetStatusText("No sub-processes running", 1)
         return True
 
     @staticmethod
