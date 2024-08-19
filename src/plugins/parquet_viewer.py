@@ -1,3 +1,5 @@
+import logging
+
 import wx
 import wx.grid
 
@@ -6,60 +8,9 @@ import duckdb
 from .base import IPlugin
 
 
-class Welcome(wx.Panel):
-    def __init__(self, parent):
-        super().__init__(parent)
+BATCH_SIZE = 100
+OFFSET = 0
 
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(sizer)
-
-        text = wx.StaticText(self, label="Welcome to the Parquet Viewer!")
-        sizer.Add(text, 0, wx.ALL, 5)
-
-        button = wx.Button(self, label="Open file")
-        button.Bind(wx.EVT_BUTTON, self.on_open_file)
-        sizer.Add(button, 0, wx.ALL, 5)
-
-        self.Layout()
-        self.Fit()
-
-    def on_open_file(self, event):
-        dialog = wx.FileDialog(self, "Open Parquet file", wildcard="Parquet files (*.parquet)|*.parquet", style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
-        if dialog.ShowModal() == wx.ID_CANCEL:
-            return
-        path = dialog.GetPath()
-        dialog.Destroy()
-
-        self.show_parquet_file(path)
-
-    def show_parquet_file(self, path):
-        the_grid = wx.grid.Grid(self)
-        duckdb.read_parquet(path)
-        the_grid.CreateGrid(0, 0, wx.grid.Grid.SelectRows)
-        the_grid.AppendCols(len(duckdb.sql(f"SELECT * FROM read_parquet('{path}') LIMIT 1").columns))
-        for i, column in enumerate(duckdb.sql(f"SELECT * FROM read_parquet('{path}') LIMIT 1").columns):
-            the_grid.SetColLabelValue(i, column)
-
-        batch_size = 100
-        for batch in range(0, 100000000, batch_size):
-            rel = duckdb.sql(f"SELECT * FROM read_parquet('{path}') LIMIT {batch_size} OFFSET {batch}")
-            data = rel.fetchall()
-            count = len(data)
-            if count == 0:
-                break
-
-            the_grid.AppendRows(count)
-            for i, row in enumerate(data):
-                for j, value in enumerate(row):
-                    the_grid.SetCellValue(i + batch, j, str(value))
-
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(the_grid, 1, wx.EXPAND)
-        self.SetSizer(sizer)
-        self.Layout()
-        self.Fit()
-
-        return True
 
 class ParquetViewer(IPlugin):
     @property
@@ -67,16 +18,64 @@ class ParquetViewer(IPlugin):
         return "Parquet Viewer"
 
     def run(self, event, environment):
-        frame = environment['plugin_frame']
+        self.environment = environment
+        self.logger = logging.getLogger(self.name)
+        self.plugin_frame = environment.get("plugin_frame")
+        self.plugin_sizer = self.plugin_frame.GetSizer()
 
-        p_sizer = wx.BoxSizer(wx.VERTICAL)
-        frame.SetSizer(p_sizer)
+        self.logger.debug("Running Parquet Viewer plugin")
 
-        panel = Welcome(frame)
-        p_sizer.Add(panel, 1, wx.EXPAND)
+        self.__setup_ui()
 
-        frame.Layout()
-        frame.Fit()
-        frame.Show()
+    def __setup_ui(self):
+        # Create a new panel to display message and filepicker
+        panel = wx.Panel(self.plugin_frame)
+        panel.SetBackgroundColour(wx.Colour(255, 255, 255))
 
-        return True
+        self.plugin_sizer.Add(panel, 1, wx.EXPAND)
+
+        # Create a new sizer for the panel
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        panel.SetSizer(sizer)
+
+        # Create a new message
+        message = wx.StaticText(panel, label="Select a Parquet file to view")
+        sizer.Add(message, 0, wx.ALL, 5)
+
+        # Create a new file picker
+        file_picker = wx.FilePickerCtrl(panel, message="Select a Parquet file", wildcard="*.parquet")
+        sizer.Add(file_picker, 0, wx.ALL, 5)
+
+        # Create a new button
+        button = wx.Button(panel, label="Load Data")
+        sizer.Add(button, 0, wx.ALL, 5)
+
+        # Bind the button to the load data function
+        button.Bind(wx.EVT_BUTTON, lambda event: self.__load_data(file_picker.GetPath()))
+
+        # Refresh the plugin frame
+        self.plugin_frame.Layout()
+        self.plugin_frame.Fit()
+        self.plugin_frame.Refresh()
+
+    def __load_data(self, file_path):
+        self.logger.debug("Loading data")
+
+        column_names = duckdb.sql(f"SELECT * FROM '{file_path}' LIMIT 1").columns
+        data = duckdb.sql(f"SELECT * FROM '{file_path}' LIMIT {BATCH_SIZE} OFFSET {OFFSET}").fetchall()
+
+        grid = wx.grid.Grid(self.plugin_frame)
+        grid.CreateGrid(len(data), len(column_names))
+
+        for i, row in enumerate(data):
+            for j, value in enumerate(row):
+                grid.SetCellValue(i, j, str(value))
+
+        for i, column_name in enumerate(column_names):
+            grid.SetColLabelValue(i, column_name)
+
+        self.plugin_sizer.Add(grid, 1, wx.EXPAND)
+        self.plugin_frame.Layout()
+        self.plugin_frame.Fit()
+        self.plugin_frame.Refresh()
+        self.logger.debug("Data loaded")

@@ -24,7 +24,7 @@ class GuiApplication(wx.App):
             self.root_frame.SetIcon(icon)
 
         # Set window minimum size
-        min_size = 400, 300
+        min_size = wx.DisplaySize()
         self.root_frame.SetMinSize(min_size)
 
         # Set window size
