@@ -84,19 +84,3 @@ def setup_logging():
         add_log_level(level_name, level_num)
 
     logging.setLoggerClass(CustomLogger)
-    logging.basicConfig(level=logging.WARNING)
-
-    logging.getLogger("app").setLevel(1)
-
-    logging.getLogger("app").trace("Trace message")
-    logging.getLogger("app").debug3("Debug3 message")
-    logging.getLogger("app").debug2("Debug2 message")
-    logging.getLogger("app").debug("Debug message")
-    logging.getLogger("app").verbose("Verbose message")
-    logging.getLogger("app").info("Info message")
-    logging.getLogger("app").notice("Notice message")
-    logging.getLogger("app").warning("Warning message")
-    logging.getLogger("app").error("Error message")
-    logging.getLogger("app").critical("Critical message")
-
-    logging.getLogger("app").setLevel(30)
