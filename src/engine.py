@@ -5,6 +5,8 @@ import logging
 import importlib
 from pathlib import Path
 
+from line_profiler import LineProfiler
+
 from gui import GuiApplication
 from src.logging_config import setup_logging
 from src.plugins.base import IPlugin
@@ -50,21 +52,24 @@ class Environment:
         folder_path = Path(__file__).parent / "plugins"
         self.logger.debug(f"Loading plugins from {folder_path}")
 
-        for file_path in glob.glob(str(folder_path / "*.py")):
-            self.logger.debug2(f"Loading plugin from {file_path}")
-
-            module_name = Path(file_path).stem
-            if module_name == "__init__" or module_name == "base":
-                continue
-            module = importlib.import_module(f"src.plugins.{module_name}")
-            for name in dir(module):
-                obj = getattr(module, name)
-                if isinstance(obj, type) and issubclass(obj, IPlugin) and obj != IPlugin:
-                    self.logger.debug2(f"Found plugin class {obj}")
-                    plugins.append(obj())
+        for file_path in glob.glob(str(folder_path / "*")):
+            file_path = Path(file_path)
+            if file_path.is_dir() and file_path.joinpath("__init__.py").exists():
+                self.logger.debug2(f"Loading plugin from {file_path}")
+                plugin = importlib.import_module(f"src.plugins.{file_path.name}")
+                for item in dir(plugin):
+                    item = getattr(plugin, item)
+                    if isinstance(item, type) and issubclass(item, IPlugin) and item != IPlugin:
+                        plugins.append(item())
+                        self.logger.debug(f"Loaded plugin {item}")
 
         self.logger.verbose(f"Loaded {len(plugins)} plugins")
         return plugins
+
+    def reload_plugins(self):
+        self.logger.debug("Reloading plugins")
+        self.plugins = self.__load_plugins()
+        return self.plugins
 
     def __setitem__(self, key, value):
         self.config[key] = value
@@ -78,6 +83,15 @@ class DevelopmentEnvironment(Environment):
 
     def __init__(self):
         super().__init__()
+        self.profiler = LineProfiler()
+        self.profiler.enable_by_count()
+        for plugin in self.plugins:
+            for item in dir(plugin):
+                if not item.startswith("__") and item != "environment":
+                    item = getattr(plugin, item)
+                    if callable(item) and not isinstance(item, property):
+                        self.profiler.add_function(item)
+
         self.logger.debug("Development environment loaded")
 
 

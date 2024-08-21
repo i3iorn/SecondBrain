@@ -84,4 +84,3 @@ def setup_logging():
         add_log_level(level_name, level_num)
 
     logging.setLoggerClass(CustomLogger)
-    logging.basicConfig(level=logging.WARNING)

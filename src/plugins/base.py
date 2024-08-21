@@ -8,5 +8,9 @@ class IPlugin(ABC):
         pass
 
     @abstractmethod
-    def run(self, event, engine):
+    def run(self, engine):
+        pass
+
+    @abstractmethod
+    def stop(self):
         pass

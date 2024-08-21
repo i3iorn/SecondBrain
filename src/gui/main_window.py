@@ -11,7 +11,20 @@ if TYPE_CHECKING:
 class GuiApplication(wx.App):
     def __init__(self, environment: "Environment"):
         self.environment = environment
+        self.logger = self.environment.logger.getChild("gui")
         super().__init__(False)
+
+        if hasattr(self.environment, "profiler"):
+            self.environment.profiler.add_function(self.OnInit)
+            self.environment.profiler.add_function(self.OnExit)
+            self.environment.profiler.add_function(self.OnAbout)
+            self.environment.profiler.add_function(self.OnQuit)
+            self.environment.profiler.add_function(self.OnPluginStart)
+            self.environment.profiler.add_function(self.OnReloadPlugins)
+            self.environment.profiler.add_function(self.__setup_menu)
+            self.environment.profiler.add_function(self.__setup_plugin_frame)
+            self.environment.profiler.add_function(self.__setup_status_bar)
+            self.environment.profiler.add_function(self.__center_on_all_monitors)
 
     def OnInit(self):
         # Create the main window
@@ -48,7 +61,10 @@ class GuiApplication(wx.App):
         return True
 
     def OnExit(self):
-        self.root_frame.Destroy()
+        self.logger.debug("Destroying GuiApplication")
+        if hasattr(self.environment, "profiler") and self.logger.getEffectiveLevel() < 5:
+            self.environment.profiler.disable()
+            self.environment.profiler.print_stats()
         return True
 
     def OnAbout(self, event):
@@ -56,6 +72,7 @@ class GuiApplication(wx.App):
         return True
 
     def OnQuit(self, event):
+        self.OnExit()
         self.root_frame.Close()
         return True
 
@@ -64,9 +81,19 @@ class GuiApplication(wx.App):
         plugin = next((plugin for plugin in self.environment.plugins if plugin.name == plugin_name), None)
         if plugin:
             try:
-                plugin.run(event, self.environment.config)
+                plugin.run(self.environment)
             except Exception as e:
                 ExceptionHandler(e, plugin, self.root_frame).handle()
+
+    def OnReloadPlugins(self, event):
+        """Reload all plugins from the plugins folder"""
+        for plugin in self.environment.plugins:
+            plugin.stop()
+            del plugin
+
+        self.environment.plugins = self.environment.reload_plugins()
+        self.logger.info("Plugins reloaded")
+        return True
 
     def __setup_menu(self):
         self.menu_bar = wx.MenuBar()
@@ -82,6 +109,9 @@ class GuiApplication(wx.App):
         settings = wx.Menu()
         self.menu_bar.Append(settings, "&Settings")
 
+        reload_plugins_item = settings.Append(wx.ID_ANY, "&Reload Plugins", "Reload all plugins")
+        self.root_frame.Bind(wx.EVT_MENU, self.OnReloadPlugins, reload_plugins_item)
+
         about_item = settings.Append(wx.ID_ABOUT, "&About", "Information about this application")
         self.root_frame.Bind(wx.EVT_MENU, self.OnAbout, about_item)
 
@@ -91,7 +121,7 @@ class GuiApplication(wx.App):
 
     def __setup_plugin_frame(self):
         self.plugin_frame = wx.Panel(self.root_frame)
-        self.plugin_frame.SetBackgroundColour(wx.Colour(255, 255, 255))
+        self.plugin_frame.SetBackgroundColour(wx.Colour(35, 45, 65))
 
         self.plugin_sizer = wx.BoxSizer(wx.VERTICAL)
         self.plugin_frame.SetSizer(self.plugin_sizer)
@@ -108,7 +138,7 @@ class GuiApplication(wx.App):
         self.environment['status_bar'].SetStatusWidths([-1, 200])
 
         # Set the default text for the status bar
-        self.environment['status_bar'].SetStatusText("Ready", 0)
+        self.environment['status_bar'].SetStatusText("Main thread ready", 0)
 
         # Set the default text for the sub-processes
         self.environment['status_bar'].SetStatusText("No sub-processes running", 1)
