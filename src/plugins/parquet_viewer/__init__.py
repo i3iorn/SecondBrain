@@ -26,6 +26,45 @@ def status_message(message):
 
 
 class ParquetViewer(IPlugin):
+    """
+    The Parquet Viewer Plugin
+
+    This plugin allows the user to view the contents of a Parquet file. The plugin allows the user to load a Parquet file
+    and view the data in a grid. The plugin also provides an overview of the Parquet file, including the total number of
+    rows, the total number of columns, and the column names.
+
+    The plugin also provides pagination to allow the user to navigate through the data in the Parquet file.
+
+    The plugin uses DuckDB to read the Parquet file and display the data in a grid.
+
+    The plugin provides the following functionality:
+    - Load Parquet File: Load a Parquet file to view the data
+    - Overview: View an overview of the Parquet file
+    - Grid: View the data in a grid
+    - Pagination: Navigate through the data in the Parquet file
+
+    # Limitations
+    - The plugin only supports Parquet files
+    - The plugin only supports reading data from the Parquet file
+    - The plugin only supports viewing the data in a grid
+    - The plugin only supports navigating through the data in the Parquet file with pagination
+
+    # Future Improvements
+    - Add support for other file formats
+    - Add support for editing data in the grid
+    - Add support for filtering data in the grid
+    - Add support for sorting data in the grid
+    - Add support for searching data in the grid
+    - Add support for exporting data from the grid
+
+    # Known Issues
+    - Switching between Parquet files may cause the grid to display incorrect data. Reloading the plugin will fix this issue.
+    - The grid may not resize correctly when the plugin frame is resized. Reloading the plugin will fix this issue.
+
+    # Dependencies
+    - DuckDB: To read the Parquet file and display the data in a grid
+    - wxPython: To create the user interface
+    """
     SAMPLE_SIZE = 100
     OFFSET = 0
     BASE_SPAN = 10
