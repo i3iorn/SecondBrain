@@ -3,29 +3,29 @@ from typing import TYPE_CHECKING
 import wx
 
 if TYPE_CHECKING:
-    from src.plugins.table_viewer import ParquetViewer
+    from src.plugins.table_viewer import TableViewer
 
 
 class Overview(wx.Panel):
     """
-    The Overview Panel for the Parquet Viewer
+    The Overview Panel for the Table Viewer.
 
-    This panel contains an overview of the Parquet file.
+    This panel provides an overview of the file, including the total number of rows, total number of columns,
+    and the column names.
 
-    The overview contains:
-    - Total Rows
-    - Total Columns
-    - Column Names
+    The overview is displayed in a read-only text control, and is updated whenever the Table Viewer plugin is
+    updated with a new file.
 
-    The overview is read-only and cannot be edited.
+    Attributes:
+        __sizer (wx.BoxSizer): The main sizer for the panel, which contains the text control.
+        __base_info (wx.TextCtrl): The text control that displays the overview information.
     """
     def __init__(self, parent: wx.Panel) -> None:
         """
-        Initialize the Overview Panel
+        Initialize the Overview Panel.
 
-        :param parent: The parent panel
-        :type parent: wx.Panel
-        :return: None
+        Args:
+            parent (wx.Panel): The parent panel for the Overview Panel.
         """
         super().__init__(parent)
         self.__sizer = wx.BoxSizer(wx.VERTICAL)
@@ -34,12 +34,15 @@ class Overview(wx.Panel):
         self.__base_info = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_NO_VSCROLL)
         self.__sizer.Add(self.__base_info, 1, wx.EXPAND)
 
-    def update(self, plugin: "ParquetViewer") -> None:
+    def update(self, plugin: "TableViewer") -> None:
         """
-        Update the Overview Panel with the information from the Parquet Viewer
+        Update the Overview Panel with the information from the Table Viewer.
 
-        :param plugin: The Parquet Viewer plugin
-        :return: None
+        This method clears the text control and populates it with the total number of rows, total number of columns,
+        and the column names from the Table Viewer plugin.
+
+        Args:
+            plugin (TableViewer): The Table Viewer plugin.
         """
         self.__base_info.Clear()
         self.__base_info.AppendText(f"Total Rows: {self.human_readable_rows(plugin.get_total_rows())}\n")
@@ -56,12 +59,16 @@ class Overview(wx.Panel):
     @staticmethod
     def human_readable_rows(rows: int) -> str:
         """
-        Convert the number of rows to a human-readable format
+        Convert the number of rows to a human-readable format.
 
-        :param rows: The number of rows
-        :type rows: int
-        :return: The human-readable number of rows
-        :rtype: str
+        This method takes an integer representing the number of rows and converts it to a human-readable string,
+        using appropriate units (e.g., thousands, millions, billions).
+
+        Args:
+            rows (int): The number of rows.
+
+        Returns:
+            str: The human-readable number of rows.
         """
         if rows < 1_000:
             return f"{rows:,}".replace(",", " ")
