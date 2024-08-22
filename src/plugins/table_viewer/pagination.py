@@ -2,10 +2,18 @@ from typing import TYPE_CHECKING
 
 import wx
 
-from src.plugins.parquet_viewer.components.button import PVButton
+from src.plugins.table_viewer.components.button import PVButton
 
 if TYPE_CHECKING:
-    from src.plugins.parquet_viewer import ParquetViewer
+    from src.plugins.table_viewer import ParquetViewer
+
+
+def lock_button():
+    def decorator(func):
+        def wrapper(self, event):
+
+            func(self, event)
+        return wrapper
 
 
 class Pagination(wx.Panel):
@@ -58,7 +66,7 @@ class Pagination(wx.Panel):
             self.logger.debug("Cannot go back any further")
             return
         self.__plugin.OFFSET -= self.__plugin.SAMPLE_SIZE
-        self.__plugin.load_parquet_data()
+        self.__plugin.load_data()
 
     def next(self, event: wx.Event) -> None:
         """
@@ -71,7 +79,7 @@ class Pagination(wx.Panel):
             self.logger.debug("Cannot go forward any further")
             return
         self.__plugin.OFFSET += self.__plugin.SAMPLE_SIZE
-        self.__plugin.load_parquet_data()
+        self.__plugin.load_data()
 
     def first(self, event: wx.Event) -> None:
         """
@@ -81,7 +89,7 @@ class Pagination(wx.Panel):
         :return: None
         """
         self.__plugin.OFFSET = 0
-        self.__plugin.load_parquet_data()
+        self.__plugin.load_data()
 
     def last(self, event: wx.Event) -> None:
         """
@@ -91,7 +99,7 @@ class Pagination(wx.Panel):
         :return: None
         """
         self.__plugin.OFFSET = self.__plugin.get_total_rows() - self.__plugin.SAMPLE_SIZE
-        self.__plugin.load_parquet_data()
+        self.__plugin.load_data()
 
     def activate(self):
         """
