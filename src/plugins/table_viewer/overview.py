@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import wx
 
 if TYPE_CHECKING:
-    from src.plugins.parquet_viewer import ParquetViewer
+    from src.plugins.table_viewer import ParquetViewer
 
 
 class Overview(wx.Panel):
@@ -42,7 +42,7 @@ class Overview(wx.Panel):
         :return: None
         """
         self.__base_info.Clear()
-        self.__base_info.AppendText(f"Total Rows: {plugin.get_total_rows()}\n")
+        self.__base_info.AppendText(f"Total Rows: {self.human_readable_rows(plugin.get_total_rows())}\n")
         self.__base_info.AppendText(f"Total Columns: {len(plugin.get_relation().columns)}\n")
 
         for i, column in enumerate(plugin.get_relation().columns):
@@ -52,3 +52,22 @@ class Overview(wx.Panel):
 
         self.Layout()
         self.Refresh()
+
+    @staticmethod
+    def human_readable_rows(rows: int) -> str:
+        """
+        Convert the number of rows to a human-readable format
+
+        :param rows: The number of rows
+        :type rows: int
+        :return: The human-readable number of rows
+        :rtype: str
+        """
+        if rows < 1_000:
+            return f"{rows:,}".replace(",", " ")
+        elif rows < 1000000:
+            return f"{rows / 1000:.1f}K".replace(".0", "")
+        elif rows < 1000000_000:
+            return f"{rows / 1000000:.1f}M".replace(".0", "")
+        else:
+            return f"{rows / 1000000000:.1f}B".replace(".0", "")
