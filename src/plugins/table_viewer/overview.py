@@ -31,7 +31,7 @@ class Overview(wx.Panel):
         self.__sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.__sizer)
 
-        self.__base_info = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_NO_VSCROLL)
+        self.__base_info = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2)
         self.__sizer.Add(self.__base_info, 1, wx.EXPAND)
 
     def update(self, plugin: "TableViewer", append: bool = False) -> None:
@@ -43,6 +43,7 @@ class Overview(wx.Panel):
 
         Args:
             plugin (TableViewer): The Table Viewer plugin.
+            append (bool): Set to true if you want to append instead of replace the content.
         """
         if not append:
             self.__base_info.Clear()
@@ -50,6 +51,8 @@ class Overview(wx.Panel):
         self.__base_info.AppendText(f"Total Rows: {self.human_readable_rows(plugin.get_total_rows())}\n")
         self.__base_info.AppendText(f"Total Columns: {len(plugin.get_relation().columns)}\n")
 
+
+        self.__base_info.AppendText("\nColumn names\n========================================================\n")
         for i, column in enumerate(plugin.get_relation().columns):
             self.__base_info.AppendText(f"{i + 1}. {column}\n")
 
