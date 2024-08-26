@@ -210,7 +210,7 @@ class TableViewer(IPlugin):
         self.__grid = wx.grid.Grid(self.__panel)
         self.__grid.SetMaxSize(
             (self.plugin_frame.GetSize()[0] - self.plugin_frame.GetSize()[0] // 4, self.plugin_frame.GetSize()[1] // 2))
-        self.__panel_sizer.Add(self.__grid, 1, wx.EXPAND)
+        self.__panel_sizer.Add(self.__grid, 4, wx.EXPAND)
 
     def __add_overview(self) -> None:
         """
@@ -219,7 +219,7 @@ class TableViewer(IPlugin):
         This method creates an instance of the Overview class and adds it to the panel.
         """
         self.__overview = Overview(self.__panel)
-        self.__panel_sizer.Add(self.__overview, 1, wx.EXPAND)
+        self.__panel_sizer.Add(self.__overview, 2, wx.EXPAND)
 
     def __add_pagination(self) -> None:
         """
@@ -305,7 +305,6 @@ class TableViewer(IPlugin):
         Returns:
             duckdb.DuckDBPyRelation: The relation of the file.
         """
-        self.logger.debug(f"Loading {self.SAMPLE_SIZE} rows from {self.path} with an offset of '{self.OFFSET}'")
         key = f"{self.path}_{self.SAMPLE_SIZE}_{self.OFFSET}"
         if key not in self.relation:
             self.relation[key] = duckdb.sql(
