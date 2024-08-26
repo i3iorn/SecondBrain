@@ -34,7 +34,7 @@ class Overview(wx.Panel):
         self.__base_info = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_NO_VSCROLL)
         self.__sizer.Add(self.__base_info, 1, wx.EXPAND)
 
-    def update(self, plugin: "TableViewer") -> None:
+    def update(self, plugin: "TableViewer", append: bool = False) -> None:
         """
         Update the Overview Panel with the information from the Table Viewer.
 
@@ -44,7 +44,9 @@ class Overview(wx.Panel):
         Args:
             plugin (TableViewer): The Table Viewer plugin.
         """
-        self.__base_info.Clear()
+        if not append:
+            self.__base_info.Clear()
+
         self.__base_info.AppendText(f"Total Rows: {self.human_readable_rows(plugin.get_total_rows())}\n")
         self.__base_info.AppendText(f"Total Columns: {len(plugin.get_relation().columns)}\n")
 
