@@ -285,7 +285,9 @@ class TableViewer(IPlugin):
                 self.logger.error("No columns found in file")
                 return False
 
-            self.__grid.CreateGrid(self.SAMPLE_SIZE, len(columns))
+            table = wx.grid.GridStringTable(self.SAMPLE_SIZE, len(columns))
+            self.__grid.SetTable(table, True)
+
             self.__pagination.activate()
             self.load_data()
             self.__overview.update(self)
