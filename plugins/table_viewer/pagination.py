@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 
 import wx
 
-from src.plugins.table_viewer.components.button import PVButton
+from .components.button import PVButton
 
 if TYPE_CHECKING:
-    from src.plugins.table_viewer import TableViewer
+    from . import TableViewer
 
 
 class ButtonNames(Enum):
@@ -78,7 +78,7 @@ class Pagination(wx.Panel):
 
         self.Show()
 
-    def __create_button(self, name: ButtonNames) -> PVButton:
+    def __create_button(self, name: ButtonNames) -> None:
         """
         Create a pagination button.
 

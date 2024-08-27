@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 
 import duckdb
@@ -8,7 +9,6 @@ import wx.grid
 from .components import PVButton
 from .overview import Overview
 from .pagination import Pagination
-from ..base import IPlugin
 
 
 def status_message(message):
@@ -34,7 +34,7 @@ def status_message(message):
     return decorator
 
 
-class TableViewer(IPlugin):
+class TableViewer:
     """
     The Table Viewer Plugin
 
@@ -67,14 +67,13 @@ class TableViewer(IPlugin):
     - Add support for exporting data from the grid
 
     # Known Issues
-    - Switching between files may cause the grid to display incorrect data. Reloading the plugin will fix this issue.
     - The grid may not resize correctly when the plugin frame is resized. Reloading the plugin will fix this issue.
 
     # Dependencies
     - DuckDB: To read the file and display the data in a grid
     - wxPython: To create the user interface
     """
-    SAMPLE_SIZE = 100
+    SAMPLE_SIZE = 1000
     OFFSET = 0
     BASE_SPAN = 10
 
@@ -308,6 +307,27 @@ class TableViewer(IPlugin):
             self.relation[key] = duckdb.sql(
                 f"SELECT * FROM '{self.path}' LIMIT {self.SAMPLE_SIZE} OFFSET {self.OFFSET}")
         return self.relation[key]
+
+    @status_message("Getting total size")
+    def get_size(self) -> str:
+        """
+        Get the size of the file.
+
+        This method retrieves the size of the file, using the file path as a key to cache the result. If the size is not
+        yet cached, it is calculated and stored in the cache.
+
+        Returns:
+            int: The size of the file.
+        """
+        size = os.path.getsize(self.path)
+        if size < 1024:
+            return f"{size} B"
+        elif size < 1024 ** 2:
+            return f"{size / 1024:.2f} KB"
+        elif size < 1024 ** 3:
+            return f"{size / 1024 ** 2:.2f} MB"
+        else:
+            return f"{size / 1024 ** 3:.2f} GB"
 
     @status_message("Getting total rows")
     def get_total_rows(self) -> int:

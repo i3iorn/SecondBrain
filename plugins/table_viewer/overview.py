@@ -1,9 +1,10 @@
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import wx
 
 if TYPE_CHECKING:
-    from src.plugins.table_viewer import TableViewer
+    from plugins.table_viewer import TableViewer
 
 THOUSAND = 1_000
 MILLION = 1_000_000
@@ -55,8 +56,9 @@ class Overview(wx.Panel):
 
         self.__base_info.AppendText(f"Total Rows: {self.human_readable_rows(plugin.get_total_rows())}")
         self.__base_info.AppendText(f"\nTotal Columns: {len(plugin.get_relation().columns)}")
+        self.__base_info.AppendText(f"\nByte size: {plugin.get_size()}")
 
-        self.__base_info.AppendText("\n\nColumn names\n=====================================================\n")
+        self.__base_info.AppendText("\n\nColumn names\n============\n")
         for i, column in enumerate(plugin.get_relation().columns):
             self.__base_info.AppendText(f"{i + 1}. {column}\n")
 

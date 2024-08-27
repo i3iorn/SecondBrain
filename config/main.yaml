@@ -4,4 +4,4 @@ application:
   size:
     width: 800
     height: 600
-  icon: "assets/2ndbrain.png"
+  icon: "2ndbrain.png"
