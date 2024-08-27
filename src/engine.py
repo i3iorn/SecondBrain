@@ -11,8 +11,6 @@ from src.gui import GuiApplication
 from src.logging_config import setup_logging
 from src.plugins.base import IPlugin
 
-from plugins import registered_plugins
-
 
 class LogLevel(Enum):
     DEVELOPMENT = 4
@@ -112,13 +110,15 @@ class Environment:
             list: The list of plugins.
         """
         plugins = []
-        for plugin in registered_plugins:
-            self.logger.debug(f"Loading plugin: {plugin}")
-            module = importlib.import_module(f"plugins.{plugin}")
-            name = plugin.title().replace("_", "")
-            obj = getattr(module, name)
-            if isinstance(obj, type):
-                plugins.append(obj())
+        for plugin in glob.glob("plugins/*"):
+            plugin = Path(plugin)
+            if plugin.is_dir() and not plugin.stem.startswith("_"):
+                self.logger.debug(f"Loading plugin: {plugin}")
+                module = importlib.import_module("plugins."+plugin.stem)
+                name = plugin.stem.title().replace("_", "")
+                obj = getattr(module, name)
+                if isinstance(obj, type):
+                    plugins.append(obj())
 
         return plugins
 
