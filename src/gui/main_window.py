@@ -1,4 +1,5 @@
 import threading
+from pathlib import Path
 from typing import Tuple, TYPE_CHECKING
 
 import wx
@@ -16,26 +17,15 @@ class GuiApplication(wx.App):
         self.plugin_lock = threading.Lock()
         super().__init__(False)
 
-        if hasattr(self.environment, "profiler"):
-            self.environment.profiler.add_function(self.OnInit)
-            self.environment.profiler.add_function(self.OnExit)
-            self.environment.profiler.add_function(self.OnAbout)
-            self.environment.profiler.add_function(self.OnQuit)
-            self.environment.profiler.add_function(self.OnPluginStart)
-            self.environment.profiler.add_function(self.OnReloadPlugins)
-            self.environment.profiler.add_function(self.__setup_menu)
-            self.environment.profiler.add_function(self.__setup_plugin_frame)
-            self.environment.profiler.add_function(self.__setup_status_bar)
-            self.environment.profiler.add_function(self.__center_on_all_monitors)
-
     def OnInit(self):
         # Create the main window
         self.root_frame = wx.Frame(None, title=self.environment.get("application", {}).get("name", "Application"))
 
         # Set icon
-        icon_path = self.environment.get("application", {}).get("icon")
+        icon_path = Path(__file__).parent.parent.parent.joinpath("assets").joinpath(self.environment.get("application", {}).get("icon"))
+        self.logger.debug(f"Setting icon: {icon_path.absolute()}")
         if icon_path:
-            icon = wx.Icon(icon_path)
+            icon = wx.Icon(icon_path.as_posix())
             self.root_frame.SetIcon(icon)
 
         # Set window minimum size
@@ -64,9 +54,6 @@ class GuiApplication(wx.App):
 
     def OnExit(self):
         self.logger.debug("Destroying GuiApplication")
-        if hasattr(self.environment, "profiler") and self.logger.getEffectiveLevel() < 5:
-            self.environment.profiler.disable()
-            self.environment.profiler.print_stats()
         return True
 
     def OnAbout(self, event):
