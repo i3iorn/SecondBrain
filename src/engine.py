@@ -6,11 +6,12 @@ from enum import Enum
 from pathlib import Path
 
 import yaml
-from line_profiler import LineProfiler
 
-from gui import GuiApplication
+from src.gui import GuiApplication
 from src.logging_config import setup_logging
 from src.plugins.base import IPlugin
+
+from plugins import registered_plugins
 
 
 class LogLevel(Enum):
@@ -69,8 +70,8 @@ class Environment:
         Returns:
             dict: The configuration data.
         """
-        config_folder_path = Path(__file__).parent / "config"
-        self.logger.debug(f"Loading config from {config_folder_path}")
+        config_folder_path = Path(__file__).parent.parent / "config"
+        self.logger.debug(f"Loading config from {config_folder_path.absolute()}")
 
         config = {}
         for file_path in glob.glob(str(config_folder_path.absolute()) + "/*"):
@@ -110,56 +111,16 @@ class Environment:
         Returns:
             list: The list of plugins.
         """
-        folder_path = Path(__file__).parent / "plugins"
-        self.logger.debug2(f"Loading plugins from {folder_path}")
-
         plugins = []
-        for module in self.__get_plugin_modules():
-            self.logger.debug3(f"Loading plugin from {module}")
-            plugin_class = self.__get_plugin_class(Path(module).name)
-            if plugin_class:
-                plugins.append(plugin_class())
+        for plugin in registered_plugins:
+            self.logger.debug(f"Loading plugin: {plugin}")
+            module = importlib.import_module(f"plugins.{plugin}")
+            name = plugin.title().replace("_", "")
+            obj = getattr(module, name)
+            if isinstance(obj, type):
+                plugins.append(obj())
 
-        self.logger.verbose(f"Loaded {len(plugins)} plugins")
         return plugins
-
-    def __get_plugin_class(self, module: str):
-        """
-        Get the plugin class from a module.
-
-        This method gets the plugin class from a module.
-
-        Args:
-            module (str): The module name.
-
-        Returns:
-            class: The plugin class.
-        """
-        plugin = importlib.import_module(f"src.plugins.{module}")
-        class_ = [cls for cls in plugin.__dict__.values() if isinstance(cls, type) and issubclass(cls, IPlugin) and cls != IPlugin]
-        if class_:
-            return class_[0]
-
-    def __get_plugin_modules(self):
-        """
-        Get the plugin modules from the plugins folder.
-
-        This method gets the plugin modules from the plugins folder.
-
-        Returns:
-            list: The list of plugin modules.
-        """
-        folder_path = Path(__file__).parent / "plugins"
-        self.logger.debug(f"Getting plugin modules from {folder_path}")
-
-        plugin_modules = [
-            file_path
-            for file_path in glob.glob(str(folder_path / "*"))
-            if (Path(file_path)).is_dir() and Path(file_path).joinpath("__init__.py").exists()
-        ]
-
-        self.logger.verbose(f"Found {len(plugin_modules)} plugin modules")
-        return plugin_modules
 
     def reload_plugins(self):
         """
@@ -186,15 +147,6 @@ class DevelopmentEnvironment(Environment):
 
     def __init__(self):
         super().__init__()
-        self.profiler = LineProfiler()
-        self.profiler.enable_by_count()
-        for plugin in self.plugins:
-            for item in dir(plugin):
-                if not item.startswith("__") and item != "environment":
-                    item = getattr(plugin, item)
-                    if callable(item) and not isinstance(item, property):
-                        self.profiler.add_function(item)
-
         self.logger.debug("Development environment loaded")
 
 
@@ -214,7 +166,7 @@ class ProductionEnvironment(Environment):
         self.logger.debug("Production environment loaded")
 
 
-def create_app(application_mode: str) -> GuiApplication:
+def create_app(application_mode: str = "development") -> GuiApplication:
     """
     Create the application.
 
