@@ -5,6 +5,10 @@ import wx
 if TYPE_CHECKING:
     from src.plugins.table_viewer import TableViewer
 
+THOUSAND = 1_000
+MILLION = 1_000_000
+BILLION = 1_000_000_000
+
 
 class Overview(wx.Panel):
     """
@@ -20,6 +24,7 @@ class Overview(wx.Panel):
         __sizer (wx.BoxSizer): The main sizer for the panel, which contains the text control.
         __base_info (wx.TextCtrl): The text control that displays the overview information.
     """
+
     def __init__(self, parent: wx.Panel) -> None:
         """
         Initialize the Overview Panel.
@@ -74,11 +79,11 @@ class Overview(wx.Panel):
         Returns:
             str: The human-readable number of rows.
         """
-        if rows < 1_000:
+        if rows < THOUSAND:
             return f"{rows:,}".replace(",", " ")
-        elif rows < 1000000:
-            return f"{rows / 1000:.1f}K".replace(".0", "")
-        elif rows < 1000000_000:
-            return f"{rows / 1000000:.1f}M".replace(".0", "")
+        elif rows < MILLION:
+            return f"{rows / THOUSAND:.1f}K".replace(".0", "")
+        elif rows < BILLION:
+            return f"{rows / MILLION:.1f}M".replace(".0", "")
         else:
-            return f"{rows / 1000000000:.1f}B".replace(".0", "")
+            return f"{rows / BILLION:.1f}B".replace(".0", "")

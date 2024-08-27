@@ -1,9 +1,10 @@
 import logging
 from pathlib import Path
 
+import duckdb
 import wx
 import wx.grid
-import duckdb
+
 from .components import PVButton
 from .overview import Overview
 from .pagination import Pagination
@@ -132,26 +133,23 @@ class TableViewer(IPlugin):
             bool: True if the plugin was stopped successfully.
         """
         self.logger.debug("Stopping Table Viewer")
-        self.__panel.Destroy()
+        if self.__panel:
+            self.__panel.Destroy()
         return True
 
     def run(self, environment) -> bool:
         """
         Run the Table Viewer.
 
-        This method is called to start the plugin. It initializes the user interface, binds the necessary events, and
-        returns True if the plugin was run successfully.
+        This method is called to start the plugin. It initializes the user interface, binds the necessary events.
 
         Args:
             environment (Environment): The environment to run the plugin in.
-
-        Returns:
-            bool: True if the plugin was run successfully.
         """
+        self.logger.debug("Running Table Viewer")
         self.environment = environment
-        self.logger = self.environment.logger.getChild("table_viewer")
-        self.__initialize_ui()
-        self.__bind_events()
+        wx.CallAfter(self.__initialize_ui)
+        wx.CallAfter(self.__bind_events)
         return True
 
     def __initialize_ui(self) -> None:
@@ -270,14 +268,14 @@ class TableViewer(IPlugin):
             style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
         )
 
+        if not Path(file_dialog.GetPath()).exists():
+            self.logger.error("File does not exist")
+            return False
+
         if file_dialog.ShowModal() == wx.ID_OK:
             self.logger.debug("Loading File")
             self.path = file_dialog.GetPath()
             self.logger.debug(f"Path: {self.path}")
-
-            if not Path(self.path).exists():
-                self.logger.error("File does not exist")
-                return False
 
             columns = duckdb.sql(f"SELECT * FROM '{self.path}' LIMIT 1").columns
 

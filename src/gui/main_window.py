@@ -1,3 +1,4 @@
+import threading
 from typing import Tuple, TYPE_CHECKING
 
 import wx
@@ -12,6 +13,7 @@ class GuiApplication(wx.App):
     def __init__(self, environment: "Environment"):
         self.environment = environment
         self.logger = self.environment.logger.getChild("gui")
+        self.plugin_lock = threading.Lock()
         super().__init__(False)
 
         if hasattr(self.environment, "profiler"):
@@ -80,10 +82,20 @@ class GuiApplication(wx.App):
         plugin_name = self.menu_bar.GetLabel(event.GetId())
         plugin = next((plugin for plugin in self.environment.plugins if plugin.name == plugin_name), None)
         if plugin:
-            try:
-                plugin.run(self.environment)
-            except Exception as e:
-                ExceptionHandler(e, plugin, self.root_frame).handle()
+            def run_plugin():
+                try:
+                    plugin.run(self.environment)
+                except Exception as e:
+                    ExceptionHandler(e, plugin, self.root_frame).handle()
+                finally:
+                    self.plugin_lock.release()
+
+            if self.plugin_lock.acquire(blocking=False):
+                self.active_plugin = plugin
+                self.plugin_thread = threading.Thread(target=run_plugin, daemon=True)
+                self.plugin_thread.start()
+            else:
+                self.logger.warning("Another plugin is already running")
 
     def OnReloadPlugins(self, event):
         """Reload all plugins from the plugins folder"""
@@ -93,6 +105,17 @@ class GuiApplication(wx.App):
 
         self.environment.plugins = self.environment.reload_plugins()
         self.logger.info("Plugins reloaded")
+        return True
+
+    def OnForceClosePlugin(self, event):
+        """Force close the running plugin"""
+        if hasattr(self, "active_plugin"):
+            self.active_plugin.stop()
+            self.logger.info("Active plugin closed")
+            self.plugin_thread.join()
+            del self.active_plugin
+        else:
+            self.logger.warning("No plugin is running")
         return True
 
     def __setup_menu(self):
@@ -114,6 +137,9 @@ class GuiApplication(wx.App):
 
         about_item = settings.Append(wx.ID_ABOUT, "&About", "Information about this application")
         self.root_frame.Bind(wx.EVT_MENU, self.OnAbout, about_item)
+
+        force_close_plugin_item = settings.Append(wx.ID_ANY, "&Close Active Plugin", "Force close the running plugin")
+        self.root_frame.Bind(wx.EVT_MENU, self.OnForceClosePlugin, force_close_plugin_item)
 
         quit_item = settings.Append(wx.ID_EXIT, "&Quit", "Quit this application")
         self.root_frame.Bind(wx.EVT_MENU, self.OnQuit, quit_item)
