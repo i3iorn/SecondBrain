@@ -65,9 +65,15 @@ class CustomStreamHandler(logging.StreamHandler):
 
 class CustomLogger(logging.Logger):
     def __init__(self, name, level=logging.NOTSET):
+        # Check if logging directory exist
+        logging_dir = "logs"
+        import os
+        if not os.path.exists(logging_dir):
+            os.makedirs(logging_dir)
+
         super().__init__(name, level)
         self.propagate = False
-        self.addHandler(CustomFileHandler(f"{name}.log"))
+        self.addHandler(CustomFileHandler(f"{logging_dir}/{name}.log"))
         self.addHandler(CustomStreamHandler())
 
 
