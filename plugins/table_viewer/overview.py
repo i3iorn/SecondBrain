@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
+from .helpers import status_message
 
 import wx
 
@@ -26,7 +27,7 @@ class Overview(wx.Panel):
         __base_info (wx.TextCtrl): The text control that displays the overview information.
     """
 
-    def __init__(self, parent: wx.Panel) -> None:
+    def __init__(self, parent: wx.Panel, plugin: "TableViewer") -> None:
         """
         Initialize the Overview Panel.
 
@@ -34,12 +35,14 @@ class Overview(wx.Panel):
             parent (wx.Panel): The parent panel for the Overview Panel.
         """
         super().__init__(parent)
+        self.status_bar = plugin.status_bar
         self.__sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.__sizer)
 
         self.__base_info = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2)
         self.__sizer.Add(self.__base_info, 1, wx.EXPAND)
 
+    @status_message(f"Updating overview")
     def update(self, plugin: "TableViewer", append: bool = False) -> None:
         """
         Update the Overview Panel with the information from the Table Viewer.

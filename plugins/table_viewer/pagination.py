@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import wx
 
 from .components.button import PVButton
+from .helpers import status_message
 
 if TYPE_CHECKING:
     from . import TableViewer
@@ -61,6 +62,7 @@ class Pagination(wx.Panel):
         """
         super().__init__(parent)
         self.logger = plugin.logger.getChild("pagination")
+        self.status_bar = plugin.status_bar
         self.__plugin = plugin
         self.__setup_ui()
 
@@ -92,6 +94,7 @@ class Pagination(wx.Panel):
         setattr(self, f"__{name}_button", button)
         self.__sizer.Add(button, 1, wx.EXPAND)
 
+    @status_message(f"Loading previous page")
     def prev(self, event: wx.Event) -> None:
         """
         Go back one page.
@@ -108,6 +111,7 @@ class Pagination(wx.Panel):
         self.__plugin.OFFSET -= self.__plugin.SAMPLE_SIZE
         self.__plugin.load_data()
 
+    @status_message(f"Loading next page")
     def next(self, event: wx.Event) -> None:
         """
         Go forward one page.
@@ -137,6 +141,7 @@ class Pagination(wx.Panel):
         self.__plugin.OFFSET = 0
         self.__plugin.load_data()
 
+    @status_message(f"Loading last page")
     def last(self, event: wx.Event) -> None:
         """
         Go to the last page.
