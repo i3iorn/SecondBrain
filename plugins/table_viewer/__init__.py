@@ -7,31 +7,9 @@ import wx
 import wx.grid
 
 from .components import PVButton
+from .helpers import status_message
 from .overview import Overview
 from .pagination import Pagination
-
-
-def status_message(message):
-    """
-    Decorator to set the status bar message in the main window.
-
-    This decorator function sets the status bar message to the provided message before executing the decorated function,
-    and then sets the status bar message back to "Main thread ready" after the function has completed.
-
-    Args:
-        message (str): The message to be displayed in the status bar.
-
-    Returns:
-        The decorated function.
-    """
-    def decorator(func):
-        def wrapper(self, *args, **kwargs):
-            self.status_bar.SetStatusText(message)
-            result = func(self, *args, **kwargs)
-            self.status_bar.SetStatusText("Main thread ready")
-            return result
-        return wrapper
-    return decorator
 
 
 class TableViewer:
@@ -215,7 +193,7 @@ class TableViewer:
 
         This method creates an instance of the Overview class and adds it to the panel.
         """
-        self.__overview = Overview(self.__panel)
+        self.__overview = Overview(self.__panel, self)
         self.__panel_sizer.Add(self.__overview, 2, wx.EXPAND)
 
     def __add_pagination(self) -> None:
@@ -344,7 +322,7 @@ class TableViewer:
             self.total_rows[self.path] = duckdb.sql(f"SELECT COUNT(*) FROM '{self.path}'").fetchone()[0]
         return self.total_rows[self.path]
 
-    @status_message("Loading Data")
+    @status_message("Loading Data: ?")
     def load_data(self) -> bool:
         """
         Load the data into the grid.
@@ -368,10 +346,13 @@ class TableViewer:
             for j, value in enumerate(row):
                 self.__grid.SetCellValue(i, j, str(value))
 
+            self.status_bar.SetStatusText(f"Loading Data: {i}")
+
         self.on_size(wx.SizeEvent((0, 0)))
         self.logger.debug(f"File loaded")
         return True
 
+    @status_message(f"Recalculate window size")
     def on_size(self, event: wx.SizeEvent) -> bool:
         """
         Resize the panel so all elements are visible.
