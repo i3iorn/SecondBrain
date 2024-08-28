@@ -110,8 +110,11 @@ class Environment:
             list: The list of plugins.
         """
         plugins = []
-        for plugin in glob.glob("plugins/*"):
+        plugins_folder = Path(__file__).parent.parent / "plugins"
+        self.logger.debug(f"Loading plugins from {plugins_folder}")
+        for plugin in glob.glob(f"{plugins_folder}/*"):
             plugin = Path(plugin)
+            self.logger.debug2(f"Checking plugin: {plugin}")
             if plugin.is_dir() and not plugin.stem.startswith("_"):
                 self.logger.debug(f"Loading plugin: {plugin}")
                 module = importlib.import_module("plugins."+plugin.stem)
