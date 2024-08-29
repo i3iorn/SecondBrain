@@ -13,7 +13,7 @@ from src.gui import GuiApplication
 from src.logging_config import setup_logging
 
 if TYPE_CHECKING:
-    from io import TextIOWrapper
+    from io import TextIO
 
 
 class LogLevel(Enum):
@@ -88,7 +88,7 @@ class Environment:
         self.logger.trace(f"Loaded config: {config}")
         return config
 
-    def __load_file(self, file: "TextIOWrapper", file_path: str) -> dict:
+    def __load_file(self, file: "TextIO", file_path: str) -> dict:
         """
         Load a configuration file.
 
