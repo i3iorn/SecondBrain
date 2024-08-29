@@ -77,6 +77,10 @@ class Environment:
 
         config = {}
         for file_path in glob.glob(str(config_folder_path.absolute()) + "/*"):
+            self.logger.debug2(f"Checking file: {file_path}")
+            if Path(file_path).stem.startswith("_"):
+                continue
+
             self.logger.debug2(f"Looking for config in {file_path}")
             try:
                 with open(file_path, "r") as file:
