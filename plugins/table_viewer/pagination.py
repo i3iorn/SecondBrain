@@ -93,7 +93,7 @@ class Pagination(BasePanel):
         """
         func = getattr(self, name.value.lower())
         button = PVButton(self, label=name.value.title(), callback=func, disabled=True)
-        setattr(self, f"__{name}_button", button)
+        setattr(self, f"__{name.value.lower()}_button", button)
 
     @status_message(f"Loading previous page")
     def prev(self, event: wx.Event) -> None:
@@ -110,6 +110,10 @@ class Pagination(BasePanel):
             self.logger.debug("Cannot go back any further")
             return
         self.__plugin.OFFSET -= self.__plugin.SAMPLE_SIZE
+
+        getattr(self, "__next_button").enable()
+        getattr(self, "__last_button").enable()
+
         self.__plugin.load_data()
 
     @status_message(f"Loading next page")
@@ -127,8 +131,13 @@ class Pagination(BasePanel):
             self.logger.debug("Cannot go forward any further")
             return
         self.__plugin.OFFSET += self.__plugin.SAMPLE_SIZE
+
+        getattr(self, "__first_button").enable()
+        getattr(self, "__prev_button").enable()
+
         self.__plugin.load_data()
 
+    @status_message(f"Loading first page")
     def first(self, event: wx.Event) -> None:
         """
         Go to the first page.
@@ -140,6 +149,12 @@ class Pagination(BasePanel):
             event (wx.Event): The event that triggered this callback.
         """
         self.__plugin.OFFSET = 0
+
+        getattr(self, "__first_button").disable()
+        getattr(self, "__prev_button").disable()
+        getattr(self, "__next_button").enable()
+        getattr(self, "__last_button").enable()
+
         self.__plugin.load_data()
 
     @status_message(f"Loading last page")
@@ -154,8 +169,15 @@ class Pagination(BasePanel):
             event (wx.Event): The event that triggered this callback.
         """
         self.__plugin.OFFSET = self.__plugin.get_total_rows() - self.__plugin.SAMPLE_SIZE
+
+        getattr(self, "__first_button").enable()
+        getattr(self, "__prev_button").enable()
+        getattr(self, "__next_button").disable()
+        getattr(self, "__last_button").disable()
+
         self.__plugin.load_data()
 
+    @status_message(f"Activate pagination")
     def activate(self) -> None:
         """
         Activate all buttons.
@@ -163,11 +185,10 @@ class Pagination(BasePanel):
         This method enables all the pagination buttons, allowing the user to navigate through the data.
         """
         for name in self.BUTTONS:
-            button = getattr(self, f"__{name}_button")
-            button.Enable()
-            button.SetBackgroundColour(BUTTON_BACKGROUND)
-            button.Refresh()
+            button = getattr(self, f"__{name.value.lower()}_button")
+            button.enable()
 
+    @status_message(f"Deactivate pagination")
     def deactivate(self) -> None:
         """
         Deactivate all buttons.
@@ -175,5 +196,5 @@ class Pagination(BasePanel):
         This method disables all the pagination buttons, preventing the user from navigating through the data.
         """
         for name in self.BUTTONS:
-            button = getattr(self, f"__{name}_button")
-            button.Disable()
+            button = getattr(self, f"__{name.value.lower()}_button")
+            button.disable()

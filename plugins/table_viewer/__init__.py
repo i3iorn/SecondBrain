@@ -145,6 +145,7 @@ class TableViewer:
         self.panel = wx.Panel(self.plugin_frame)
         self.panel_sizer = wx.FlexGridSizer(3, 2, self.BASE_SPAN, self.BASE_SPAN)
         self.panel_sizer.AddGrowableCol(0, 3)
+        self.panel_sizer.AddGrowableCol(1, 1)
         self.panel_sizer.AddGrowableRow(1, 4)
 
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)

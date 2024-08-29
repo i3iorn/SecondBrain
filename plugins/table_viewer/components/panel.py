@@ -1,9 +1,10 @@
 import wx
 
 from config.colors import *
+from .mixins import SetFontMixin
 
 
-class BasePanel(wx.Panel):
+class BasePanel(SetFontMixin, wx.Panel):
     def __init__(self, parent: wx.Panel) -> None:
         super().__init__(parent)
         self.parent_sizer = parent.GetSizer().GetItem(0).GetSizer()
@@ -11,8 +12,7 @@ class BasePanel(wx.Panel):
 
         self.SetForegroundColour(COMPONENT_FOREGROUND)
 
-        font = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "Avenir")
-        self.SetFont(font)
+        self.set_font()
 
         self.__outer_sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.__outer_sizer)
