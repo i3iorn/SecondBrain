@@ -4,4 +4,8 @@ application:
   size:
     width: 800
     height: 600
+  status_bar:
+    sub_process:
+      height: 20
+      width: 200
   icon: "2ndbrain.png"
