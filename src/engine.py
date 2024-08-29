@@ -4,12 +4,16 @@ import json
 import logging
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
+from src import exceptions
 from src.gui import GuiApplication
 from src.logging_config import setup_logging
-from src.plugins.base import IPlugin
+
+if TYPE_CHECKING:
+    from io import TextIOWrapper
 
 
 class LogLevel(Enum):
@@ -46,7 +50,7 @@ class Environment:
         self.plugins = self.__load_plugins()
         self.config = self.__load_config()
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Any = None) -> Any:
         """
         Get a value from the config.
 
@@ -59,7 +63,7 @@ class Environment:
         """
         return self.config.get(key, default)
 
-    def __load_config(self):
+    def __load_config(self) -> dict:
         """
         Load the configuration from the config folder.
 
@@ -77,16 +81,14 @@ class Environment:
             try:
                 with open(file_path, "r") as file:
                     config.update(self.__load_file(file, file_path))
-            except PermissionError as e:
-                self.logger.error(f"Permission denied: {e}")
-                self.logger.error(f"Could not load config from {file_path}")
-                self.logger.error("Continuing with other config files")
+            except IOError as e:
+                raise exceptions.ConfigException(f"Unable to load config from: {file_path}")
 
         self.logger.info(f"Loaded {len(str(config))} bytes of data into config.")
         self.logger.trace(f"Loaded config: {config}")
         return config
 
-    def __load_file(self, file, file_path):
+    def __load_file(self, file: "TextIOWrapper", file_path: str) -> dict:
         """
         Load a configuration file.
 
@@ -99,13 +101,14 @@ class Environment:
         Returns:
             dict: The configuration data from the file.
         """
+        self.logger.debug(f"Loading file: {file_path}")
         if Path(file_path).suffix == ".yaml":
             return yaml.safe_load(file)
         elif Path(file_path).suffix == ".json":
             return json.load(file)
         return {}
 
-    def __load_plugins(self):
+    def __load_plugins(self) -> list:
         """
         Load the plugins from the plugins folder.
 
@@ -119,7 +122,6 @@ class Environment:
         self.logger.debug(f"Loading plugins from {plugins_folder}")
         for plugin in glob.glob(f"{plugins_folder}/*"):
             plugin = Path(plugin)
-            self.logger.debug2(f"Checking plugin: {plugin}")
             if plugin.is_dir() and not plugin.stem.startswith("_"):
                 self.logger.debug(f"Loading plugin: {plugin}")
                 module = importlib.import_module("plugins."+plugin.stem)
@@ -130,7 +132,7 @@ class Environment:
 
         return plugins
 
-    def reload_plugins(self):
+    def reload_plugins(self) -> list:
         """
         Reload the plugins.
 
@@ -193,3 +195,5 @@ def create_app(application_mode: str = "development") -> GuiApplication:
         return GuiApplication(StagingEnvironment())
     elif application_mode == "production":
         return GuiApplication(ProductionEnvironment())
+
+    raise ValueError(f"Invalid application mode: {application_mode}. Must be one of 'development', 'staging', or 'production'.")
