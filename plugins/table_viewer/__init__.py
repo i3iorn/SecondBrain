@@ -8,7 +8,7 @@ import wx.grid
 
 from .components import PVButton
 from .helpers import status_message
-from .overview import Overview
+from .columns import ColumnsPanel
 from .pagination import Pagination
 
 
@@ -193,7 +193,7 @@ class TableViewer:
 
         This method creates an instance of the Overview class and adds it to the panel.
         """
-        self.__overview = Overview(self.__panel, self)
+        self.__overview = ColumnsPanel(self.__panel, self)
         self.__panel_sizer.Add(self.__overview, 2, wx.EXPAND)
 
     def __add_pagination(self) -> None:
