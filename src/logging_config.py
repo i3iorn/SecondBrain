@@ -1,5 +1,6 @@
 import logging
 import logging.handlers
+import queue
 
 
 def add_log_level(level_name, level_num):
@@ -90,3 +91,18 @@ def setup_logging():
         add_log_level(level_name, level_num)
 
     logging.setLoggerClass(CustomLogger)
+
+    # Create a queue for log messages
+    log_queue = queue.Queue()
+
+    # Create a handler that sends log messages to the queue
+    queue_handler = logging.handlers.QueueHandler(log_queue)
+
+    # Set up the root logger to use the queue handler
+    logging.basicConfig(level=logging.DEBUG, handlers=[queue_handler])
+
+    # Create a listener that processes log messages from the queue
+    listener = logging.handlers.QueueListener(log_queue, *logging.getLogger().handlers)
+
+    # Start the listener
+    listener.start()
