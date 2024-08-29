@@ -20,3 +20,31 @@ def status_message(message):
             return result
         return wrapper
     return decorator
+
+
+THOUSAND = 1_000
+MILLION = 1_000_000
+BILLION = 1_000_000_000
+
+
+def human_readable_rows(rows: int) -> str:
+    """
+    Convert the number of rows to a human-readable format.
+
+    This method takes an integer representing the number of rows and converts it to a human-readable string,
+    using appropriate units (e.g., thousands, millions, billions).
+
+    Args:
+        rows (int): The number of rows.
+
+    Returns:
+        str: The human-readable number of rows.
+    """
+    if rows < THOUSAND:
+        return f"{rows:,}".replace(",", " ")
+    elif rows < MILLION:
+        return f"{rows / THOUSAND:.1f}K".replace(".0", "")
+    elif rows < BILLION:
+        return f"{rows / MILLION:.1f}M".replace(".0", "")
+    else:
+        return f"{rows / BILLION:.1f}B".replace(".0", "")

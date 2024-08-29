@@ -3,7 +3,9 @@ from typing import TYPE_CHECKING
 
 import wx
 
+from config.colors import *
 from .components.button import PVButton
+from .components.panel import BasePanel
 from .helpers import status_message
 
 if TYPE_CHECKING:
@@ -28,7 +30,7 @@ class ButtonNames(Enum):
     LAST = "Last"
 
 
-class Pagination(wx.Panel):
+class Pagination(BasePanel):
     """
     The Pagination Panel for the Table Viewer.
 
@@ -52,7 +54,7 @@ class Pagination(wx.Panel):
     """
     BUTTONS = ButtonNames
 
-    def __init__(self, parent: wx.Panel, plugin: 'TableViewer') -> None:
+    def __init__(self, tv: 'TableViewer') -> None:
         """
         Initialize the Pagination Panel.
 
@@ -60,10 +62,10 @@ class Pagination(wx.Panel):
             parent (wx.Panel): The parent panel for the Pagination Panel.
             plugin (TableViewer): The Table Viewer plugin instance.
         """
-        super().__init__(parent)
-        self.logger = plugin.logger.getChild("pagination")
-        self.status_bar = plugin.status_bar
-        self.__plugin = plugin
+        super().__init__(tv.panel)
+        self.logger = tv.logger.getChild("pagination")
+        self.status_bar = tv.status_bar
+        self.__plugin = tv
         self.__setup_ui()
 
     def __setup_ui(self) -> None:
@@ -92,7 +94,6 @@ class Pagination(wx.Panel):
         func = getattr(self, name.value.lower())
         button = PVButton(self, label=name.value.title(), callback=func, disabled=True)
         setattr(self, f"__{name}_button", button)
-        self.__sizer.Add(button, 1, wx.EXPAND)
 
     @status_message(f"Loading previous page")
     def prev(self, event: wx.Event) -> None:
@@ -164,3 +165,15 @@ class Pagination(wx.Panel):
         for name in self.BUTTONS:
             button = getattr(self, f"__{name}_button")
             button.Enable()
+            button.SetBackgroundColour(BUTTON_BACKGROUND)
+            button.Refresh()
+
+    def deactivate(self) -> None:
+        """
+        Deactivate all buttons.
+
+        This method disables all the pagination buttons, preventing the user from navigating through the data.
+        """
+        for name in self.BUTTONS:
+            button = getattr(self, f"__{name}_button")
+            button.Disable()

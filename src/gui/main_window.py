@@ -4,10 +4,12 @@ from typing import Tuple, TYPE_CHECKING
 
 import wx
 
+from config.colors import *
 from src.exceptions import ExceptionHandler
 
 if TYPE_CHECKING:
     from src.engine import Environment
+
 
 
 class GuiApplication(wx.App):
@@ -134,7 +136,7 @@ class GuiApplication(wx.App):
 
     def __setup_plugin_frame(self):
         self.plugin_frame = wx.Panel(self.root_frame)
-        self.plugin_frame.SetBackgroundColour(wx.Colour(35, 45, 65))
+        self.plugin_frame.SetBackgroundColour(wx.Colour(WINDOW_BACKGROUND))
 
         self.plugin_sizer = wx.BoxSizer(wx.VERTICAL)
         self.plugin_frame.SetSizer(self.plugin_sizer)

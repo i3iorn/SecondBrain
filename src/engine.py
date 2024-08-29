@@ -74,8 +74,13 @@ class Environment:
         config = {}
         for file_path in glob.glob(str(config_folder_path.absolute()) + "/*"):
             self.logger.debug2(f"Looking for config in {file_path}")
-            with open(file_path, "r") as file:
-                config.update(self.__load_file(file, file_path))
+            try:
+                with open(file_path, "r") as file:
+                    config.update(self.__load_file(file, file_path))
+            except PermissionError as e:
+                self.logger.error(f"Permission denied: {e}")
+                self.logger.error(f"Could not load config from {file_path}")
+                self.logger.error("Continuing with other config files")
 
         self.logger.info(f"Loaded {len(str(config))} bytes of data into config.")
         self.logger.trace(f"Loaded config: {config}")

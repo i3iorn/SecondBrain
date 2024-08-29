@@ -6,9 +6,15 @@ import duckdb
 import wx
 import wx.grid
 
+from config.colors import *
+
 from .components import PVButton
+from .components.panel import BasePanel
+from .grid import GridPanel
 from .helpers import status_message
-from .columns import ColumnsPanel
+from .columns import ColumnOverviewPanel
+from .load_file import LoadFilePanel
+from .overview import OverviewPanel
 from .pagination import Pagination
 
 
@@ -60,11 +66,11 @@ class TableViewer:
         Initialize the Table Viewer Plugin
         """
         self.logger = logging.getLogger("table_viewer")
-        self.__panel = None
+        self.panel = None
         self.__button = None
-        self.__grid = None
-        self.__overview = None
-        self.__pagination = None
+        self.grid = None
+        self.overview = None
+        self.pagination = None
         self.environment = None
         self.total_rows = {}
         self.relation = {}
@@ -110,8 +116,8 @@ class TableViewer:
             bool: True if the plugin was stopped successfully.
         """
         self.logger.debug("Stopping Table Viewer")
-        if self.__panel:
-            self.__panel.Destroy()
+        if self.panel:
+            self.panel.Destroy()
         return True
 
     def run(self, environment) -> bool:
@@ -136,82 +142,24 @@ class TableViewer:
         This method sets up the panel, sizers, and various UI elements for the plugin, including the load file button,
         overview label, grid, overview, pagination, and a spacer.
         """
-        self.__panel = wx.Panel(self.plugin_frame)
-        self.__panel_sizer = wx.FlexGridSizer(3, 2, self.BASE_SPAN, self.BASE_SPAN)
-        self.__panel_sizer.AddGrowableCol(0)
-        self.__panel_sizer.AddGrowableCol(1)
-        self.__panel_sizer.AddGrowableRow(1)
+        self.panel = wx.Panel(self.plugin_frame)
+        self.panel_sizer = wx.FlexGridSizer(3, 2, self.BASE_SPAN, self.BASE_SPAN)
+        self.panel_sizer.AddGrowableCol(0, 3)
+        self.panel_sizer.AddGrowableRow(1, 4)
 
-        self.__add_button()
-        self.__add_overview_label()
-        self.__add_grid()
-        self.__add_overview()
-        self.__add_pagination()
-        self.__add_spacer()
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.main_sizer.Add(self.panel_sizer, 1, wx.EXPAND | wx.ALL, self.BASE_SPAN)
+        self.panel.SetSizer(self.main_sizer)
 
-        self.__main_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.__main_sizer.Add(self.__panel_sizer, 1, wx.EXPAND | wx.ALL, self.BASE_SPAN)
-        self.__panel.SetSizer(self.__main_sizer)
-        self.__panel.SetSize(self.plugin_frame.GetSize())
-        self.__panel.Show()
+        self.overview = OverviewPanel(self)
+        self.panel_sizer.Add(wx.StaticText(self.panel, label=""), 1, wx.EXPAND)
+        self.grid = GridPanel(self)
+        self.column_overview = ColumnOverviewPanel(self)
+        self.pagination = Pagination(self)
+        self.load_file_button = LoadFilePanel(self)
 
-    def __add_button(self) -> None:
-        """
-        Add the load file button to the panel.
-
-        This method creates a button with the label "Load File" and associates it with the __load_file method as the
-        callback function.
-        """
-        self.__button = PVButton(self.__panel, label="Load File", callback=self.__load_file)
-        self.__panel_sizer.Add(self.__button, 1, wx.EXPAND)
-
-    def __add_overview_label(self) -> None:
-        """
-        Add the overview label to the panel.
-
-        This method creates a static text label with the text "Overview" and sets its foreground color and font style.
-        """
-        overview_label = wx.StaticText(self.__panel, label="Overview")
-        overview_label.SetForegroundColour(wx.Colour(240, 250, 255))
-        overview_label.SetExtraStyle(wx.BOLD)
-        self.__panel_sizer.Add(overview_label, 1, wx.ALIGN_CENTER)
-
-    def __add_grid(self) -> None:
-        """
-        Add the grid to the panel.
-
-        This method creates a wx.grid.Grid and sets its maximum size based on the size of the plugin frame.
-        """
-        self.__grid = wx.grid.Grid(self.__panel)
-        self.__grid.SetMaxSize(
-            (self.plugin_frame.GetSize()[0] - self.plugin_frame.GetSize()[0] // 4, self.plugin_frame.GetSize()[1] // 2))
-        self.__panel_sizer.Add(self.__grid, 4, wx.EXPAND)
-
-    def __add_overview(self) -> None:
-        """
-        Add the overview to the panel.
-
-        This method creates an instance of the Overview class and adds it to the panel.
-        """
-        self.__overview = ColumnsPanel(self.__panel, self)
-        self.__panel_sizer.Add(self.__overview, 2, wx.EXPAND)
-
-    def __add_pagination(self) -> None:
-        """
-        Add the pagination to the panel.
-
-        This method creates an instance of the Pagination class and adds it to the panel.
-        """
-        self.__pagination = Pagination(self.__panel, self)
-        self.__panel_sizer.Add(self.__pagination, 1, wx.EXPAND)
-
-    def __add_spacer(self) -> None:
-        """
-        Add a spacer to the panel.
-
-        This method adds a static text element as a spacer to the panel.
-        """
-        self.__panel_sizer.Add(wx.StaticText(self.__panel, label=""), 1, wx.EXPAND)
+        self.panel.SetSize(self.plugin_frame.GetSize())
+        self.panel.Show()
 
     def __bind_events(self) -> None:
         """
@@ -225,7 +173,7 @@ class TableViewer:
             self.plugin_frame.Bind(event, self.on_size)
 
     @status_message("Begin loading file")
-    def __load_file(self, event: wx.CommandEvent) -> bool:
+    def load_file(self, event: wx.CommandEvent) -> bool:
         """
         Load a file.
 
@@ -240,7 +188,7 @@ class TableViewer:
             bool: True if the file was loaded successfully.
         """
         file_dialog = wx.FileDialog(
-            self.__panel, "Open File",
+            self.panel, "Open File",
             wildcard="Parquet files (*.parquet)|*.parquet|CSV files (*.csv)|*.csv|JSON files (*.json)|*.json|All files|*",
             style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
         )
@@ -261,11 +209,11 @@ class TableViewer:
                 return False
 
             table = wx.grid.GridStringTable(self.SAMPLE_SIZE, len(columns))
-            self.__grid.SetTable(table, True)
+            self.grid.SetTable(table, True)
 
-            self.__pagination.activate()
+            self.pagination.activate()
             self.load_data()
-            self.__overview.update(self)
+            self.column_overview.update(self.get_relation().columns)
 
         return True
 
@@ -339,14 +287,17 @@ class TableViewer:
         self.logger.debug(f"Settings up grid table with data")
 
         for i, column in enumerate(columns):
-            self.__grid.SetColLabelValue(i, column)
+            self.grid.SetColLabelValue(i, column)
 
         for i, row in enumerate(data):
-            self.__grid.SetRowLabelValue(i, str(self.OFFSET + i + 1))
+            self.grid.SetRowLabelValue(i, str(self.OFFSET + i + 1))
             for j, value in enumerate(row):
-                self.__grid.SetCellValue(i, j, str(value))
+                self.grid.SetCellValue(i, j, str(value))
 
             self.status_bar.SetStatusText(f"Loading Data: {i}")
+
+        self.grid.AutoSizeColumns()
+        self.grid.AutoSizeRows()
 
         self.on_size(wx.SizeEvent((0, 0)))
         self.logger.debug(f"File loaded")
@@ -367,8 +318,8 @@ class TableViewer:
             bool: True if the panel was resized successfully.
         """
         self.logger.trace("Resizing panel")
-        self.__panel.SetSize(self.plugin_frame.GetSize())
-        self.__panel.Layout()
-        self.__panel.Refresh()
+        self.panel.SetSize(self.plugin_frame.GetSize())
+        self.panel.Layout()
+        self.panel.Refresh()
         event.Skip()
         return True

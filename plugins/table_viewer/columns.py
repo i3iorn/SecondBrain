@@ -1,18 +1,14 @@
-from pathlib import Path
 from typing import TYPE_CHECKING
 from .helpers import status_message
+from .components.panel import BasePanel
 
 import wx
 
 if TYPE_CHECKING:
     from plugins.table_viewer import TableViewer
 
-THOUSAND = 1_000
-MILLION = 1_000_000
-BILLION = 1_000_000_000
 
-
-class ColumnsPanel(wx.Panel):
+class ColumnOverviewPanel(BasePanel):
     """
     The Overview Panel for the Table Viewer.
 
@@ -27,15 +23,15 @@ class ColumnsPanel(wx.Panel):
         __base_info (wx.TextCtrl): The text control that displays the overview information.
     """
 
-    def __init__(self, parent: wx.Panel, plugin: "TableViewer") -> None:
+    def __init__(self, tv: "TableViewer") -> None:
         """
         Initialize the Overview Panel.
 
         Args:
             parent (wx.Panel): The parent panel for the Overview Panel.
         """
-        super().__init__(parent)
-        self.status_bar = plugin.status_bar
+        super().__init__(tv.panel)
+        self.status_bar = tv.status_bar
         self.__sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.__sizer)
 
@@ -43,7 +39,7 @@ class ColumnsPanel(wx.Panel):
         self.__sizer.Add(self.__base_info, 1, wx.EXPAND)
 
     @status_message(f"Updating overview")
-    def update(self, plugin: "TableViewer", append: bool = False) -> None:
+    def update(self, columns: list) -> None:
         """
         Update the Overview Panel with the information from the Table Viewer.
 
@@ -51,39 +47,12 @@ class ColumnsPanel(wx.Panel):
         and the column names from the Table Viewer plugin.
 
         Args:
-            plugin (TableViewer): The Table Viewer plugin.
-            append (bool): Set to true if you want to append instead of replace the content.
+            columns (list): The list of column names from the Table Viewer plugin.
         """
-        if not append:
-            self.__base_info.Clear()
-
-        for i, column in enumerate(plugin.get_relation().columns):
+        for i, column in enumerate(columns):
             self.__base_info.AppendText(f"{i + 1}. {column}\n")
 
         self.__base_info.AppendText("\n")
 
         self.Layout()
         self.Refresh()
-
-    @staticmethod
-    def human_readable_rows(rows: int) -> str:
-        """
-        Convert the number of rows to a human-readable format.
-
-        This method takes an integer representing the number of rows and converts it to a human-readable string,
-        using appropriate units (e.g., thousands, millions, billions).
-
-        Args:
-            rows (int): The number of rows.
-
-        Returns:
-            str: The human-readable number of rows.
-        """
-        if rows < THOUSAND:
-            return f"{rows:,}".replace(",", " ")
-        elif rows < MILLION:
-            return f"{rows / THOUSAND:.1f}K".replace(".0", "")
-        elif rows < BILLION:
-            return f"{rows / MILLION:.1f}M".replace(".0", "")
-        else:
-            return f"{rows / BILLION:.1f}B".replace(".0", "")
