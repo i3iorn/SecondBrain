@@ -13,6 +13,8 @@ class GridPanel(BasePanel):
         self.__grid = wx.grid.Grid(self)
         self.__sizer.Add(self.__grid, 1, wx.EXPAND)
 
+        self.SetMaxSize((tv.panel.GetSize()[0], tv.panel.GetSize()[1] // 2))
+
         self.__grid.AutoSizeColumns()
         self.__grid.AutoSizeRows()
         self.GetTopLevelParent().Layout()
