@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 import wx
 
-from config.colors import *
 from .components.button import PVButton
 from .components.panel import BasePanel
 from .helpers import status_message
@@ -79,8 +78,6 @@ class Pagination(BasePanel):
 
         for name in self.BUTTONS:
             self.__create_button(name)
-
-        self.Show()
 
     def __create_button(self, name: ButtonNames) -> None:
         """
