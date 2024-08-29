@@ -1,7 +1,6 @@
 import wx
 
 from config.colors import *
-
 from .mixins import SetFontMixin
 
 
@@ -24,28 +23,32 @@ class PVButton(SetFontMixin, wx.Button):
         self.parent_sizer.Add(self, 1, wx.EXPAND)
 
     def on_hover(self, event):
-        self.SetBackgroundColour(BUTTON_BACKGROUND_HOVER)
-        self.SetForegroundColour(BUTTON_FOREGROUND_HOVER)
-        self.Refresh()
-        event.Skip()
+        if self.IsEnabled:
+            self.SetBackgroundColour(BUTTON_BACKGROUND_HOVER)
+            self.SetForegroundColour(BUTTON_FOREGROUND_HOVER)
+            self.Refresh()
+            event.Skip()
 
     def on_leave(self, event):
-        self.SetBackgroundColour(BUTTON_BACKGROUND)
-        self.SetForegroundColour(BUTTON_FOREGROUND)
-        self.Refresh()
-        event.Skip()
+        if self.IsEnabled:
+            self.SetBackgroundColour(BUTTON_BACKGROUND)
+            self.SetForegroundColour(BUTTON_FOREGROUND)
+            self.Refresh()
+            event.Skip()
 
     def on_click(self, event):
-        self.SetBackgroundColour(BUTTON_BACKGROUND_CLICK)
-        self.SetForegroundColour(BUTTON_FOREGROUND_CLICK)
-        self.Refresh()
-        event.Skip()
+        if self.IsEnabled:
+            self.SetBackgroundColour(BUTTON_BACKGROUND_CLICK)
+            self.SetForegroundColour(BUTTON_FOREGROUND_CLICK)
+            self.Refresh()
+            event.Skip()
 
     def disable(self):
-        super().Disable()
-        self.SetBackgroundColour(BUTTON_BACKGROUND_DISABLED)
-        self.SetForegroundColour(BUTTON_FOREGROUND_DISABLED)
-        self.Refresh()
+        if self.IsEnabled:
+            super().Disable()
+            self.SetBackgroundColour(BUTTON_BACKGROUND_DISABLED)
+            self.SetForegroundColour(BUTTON_FOREGROUND_DISABLED)
+            self.Refresh()
 
     def enable(self):
         super().Enable()
