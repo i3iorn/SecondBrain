@@ -1,20 +1,24 @@
+import inspect
 from typing import TYPE_CHECKING
 
 import wx
-import inspect
 
 if TYPE_CHECKING:
     from src.plugins.base import IPlugin
 
 
+class ConfigException(Exception):
+    pass
+
+
 class ExceptionHandler:
-    def __init__(self, exception, plugin: "IPlugin", root: wx.Frame):
+    def __init__(self, exception, plugin: "IPlugin", root: wx.Frame) -> None:
         self.exception = exception
         self.plugin = plugin
         self.root = root
         self.func = inspect.currentframe().f_back.f_code
 
-    def handle(self):
+    def handle(self) -> bool:
         # Show error message
         wx.MessageBox(f"An error occurred while running the plugin {self.plugin.name}\n\n{self.exception}", "Error", wx.OK | wx.ICON_ERROR)
 
