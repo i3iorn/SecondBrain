@@ -103,10 +103,10 @@ class Pagination(BasePanel):
         Args:
             event (wx.Event): The event that triggered this callback.
         """
-        if self.__plugin.OFFSET - self.__plugin.SAMPLE_SIZE < 0:
+        if self.__plugin.offset - self.__plugin.sample_size < 0:
             self.logger.debug("Cannot go back any further")
             return
-        self.__plugin.OFFSET -= self.__plugin.SAMPLE_SIZE
+        self.__plugin.offset -= self.__plugin.sample_size
 
         getattr(self, "__next_button").enable()
         getattr(self, "__last_button").enable()
@@ -124,10 +124,10 @@ class Pagination(BasePanel):
         Args:
             event (wx.Event): The event that triggered this callback.
         """
-        if self.__plugin.OFFSET + self.__plugin.SAMPLE_SIZE >= self.__plugin.get_total_rows():
+        if self.__plugin.offset + self.__plugin.sample_size >= self.__plugin.get_total_rows():
             self.logger.debug("Cannot go forward any further")
             return
-        self.__plugin.OFFSET += self.__plugin.SAMPLE_SIZE
+        self.__plugin.offset += self.__plugin.sample_size
 
         getattr(self, "__first_button").enable()
         getattr(self, "__prev_button").enable()
@@ -145,7 +145,7 @@ class Pagination(BasePanel):
         Args:
             event (wx.Event): The event that triggered this callback.
         """
-        self.__plugin.OFFSET = 0
+        self.__plugin.offset = 0
 
         getattr(self, "__first_button").disable()
         getattr(self, "__prev_button").disable()
@@ -165,7 +165,13 @@ class Pagination(BasePanel):
         Args:
             event (wx.Event): The event that triggered this callback.
         """
-        self.__plugin.OFFSET = self.__plugin.get_total_rows() - self.__plugin.SAMPLE_SIZE
+        if self.__plugin.get_total_rows() < self.__plugin.sample_size:
+            self.logger.debug("Cannot go to last page")
+            getattr(self, "__last_button").disable()
+            getattr(self, "__next_button").disable()
+            return
+
+        self.__plugin.offset = self.__plugin.get_total_rows() - self.__plugin.sample_size
 
         getattr(self, "__first_button").enable()
         getattr(self, "__prev_button").enable()
