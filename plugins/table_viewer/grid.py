@@ -28,6 +28,9 @@ class GridPanel(BasePanel):
     def ClearGrid(self):
         self.__grid.ClearGrid()
 
+    def DeleteRows(self, pos, numRows=1):
+        self.__grid.DeleteRows(pos, numRows)
+
     def SetCellValue(self, row, col, value):
         self.__grid.SetCellValue(row, col, value)
 
