@@ -6,13 +6,11 @@ import duckdb
 import wx
 import wx.grid
 
-from config.colors import *
-
+from .columns import ColumnOverviewPanel
 from .components import PVButton
 from .components.panel import BasePanel
 from .grid import GridPanel
 from .helpers import status_message
-from .columns import ColumnOverviewPanel
 from .load_file import LoadFilePanel
 from .overview import OverviewPanel
 from .pagination import Pagination
@@ -57,8 +55,6 @@ class TableViewer:
     - DuckDB: To read the file and display the data in a grid
     - wxPython: To create the user interface
     """
-    SAMPLE_SIZE = 1000
-    OFFSET = 0
     BASE_SPAN = 10
 
     def __init__(self):
@@ -74,6 +70,9 @@ class TableViewer:
         self.environment = None
         self.total_rows = {}
         self.relation = {}
+        self.df = None
+        self.offset = 0
+        self.sample_size = 1000
 
     @property
     def name(self) -> str:
@@ -209,12 +208,12 @@ class TableViewer:
                 self.logger.error("No columns found in file")
                 return False
 
-            table = wx.grid.GridStringTable(self.SAMPLE_SIZE, len(columns))
+            table = wx.grid.GridStringTable(self.sample_size, len(columns))
             self.grid.SetTable(table, True)
 
             self.pagination.activate()
             self.load_data()
-            self.column_overview.update(self.get_relation().columns)
+            self.overview.update(total_rows=self.get_total_rows(True), columns=columns)
 
         return True
 
@@ -229,10 +228,10 @@ class TableViewer:
         Returns:
             duckdb.DuckDBPyRelation: The relation of the file.
         """
-        key = f"{self.path}_{self.SAMPLE_SIZE}_{self.OFFSET}"
+        key = f"{self.path}_{self.sample_size}_{self.offset}"
         if key not in self.relation:
             self.relation[key] = duckdb.sql(
-                f"SELECT * FROM '{self.path}' LIMIT {self.SAMPLE_SIZE} OFFSET {self.OFFSET}")
+                f"SELECT * FROM '{self.path}' LIMIT {self.sample_size} OFFSET {self.offset}")
         return self.relation[key]
 
     @status_message("Getting total size")
@@ -257,7 +256,7 @@ class TableViewer:
             return f"{size / 1024 ** 3:.2f} GB"
 
     @status_message("Getting total rows")
-    def get_total_rows(self) -> int:
+    def get_total_rows(self, file_count: bool = False) -> int:
         """
         Get the total number of rows in the file.
 
@@ -267,35 +266,52 @@ class TableViewer:
         Returns:
             int: The total number of rows in the file.
         """
+        if self.df is not None and not file_count:
+            return self.df.count("*").fetchone()[0]
+
         if self.path not in self.total_rows:
             self.total_rows[self.path] = duckdb.sql(f"SELECT COUNT(*) FROM '{self.path}'").fetchone()[0]
+
         return self.total_rows[self.path]
 
     @status_message("Loading Data: ?")
-    def load_data(self) -> bool:
+    def load_data(self, df: duckdb.DuckDBPyRelation = None) -> bool:
         """
         Load the data into the grid.
 
         This method retrieves the data from the duckdb relation, sets the column labels in the grid, and populates the
         grid with the data. It also resizes the grid to fit the panel.
 
+        Arguments:
+            df (duckdb.DuckDBPyRelation): The duckdb relation to load the data from.
+
         Returns:
             bool: True if the data was loaded successfully.
         """
-        columns = self.get_relation().columns
-        self.logger.debug(f"Columns: {columns}")
-        data = self.get_relation().fetchall()
-        self.logger.debug(f"Settings up grid table with data")
+        if df is None:
+            df = self.df or self.get_relation()
+
+        self.logger.debug(f"Loading data")
+        data = df.fetchall()
+        columns = df.columns
+
+        self.grid.ClearGrid()
 
         for i, column in enumerate(columns):
             self.grid.SetColLabelValue(i, column)
 
         for i, row in enumerate(data):
-            self.grid.SetRowLabelValue(i, str(self.OFFSET + i + 1))
+            self.grid.SetRowLabelValue(i, str(self.offset + i + 1))
             for j, value in enumerate(row):
                 self.grid.SetCellValue(i, j, str(value))
 
             self.status_bar.SetStatusText(f"Loading Data: {i}")
+
+        # Remove extra rows
+        if len(data) < self.sample_size:
+            self.grid.DeleteRows(len(data), self.sample_size - len(data))
+
+        self.df = df
 
         self.grid.AutoSizeColumns()
         self.grid.AutoSizeRows()
@@ -323,4 +339,25 @@ class TableViewer:
         self.panel.Layout()
         self.panel.Refresh()
         event.Skip()
+        return True
+
+    @status_message(f"Searching")
+    def search(self, column: str, search: str) -> bool:
+        """
+        Search for a value in a column.
+
+        This method searches for a value in a column and highlights the cell in the grid that contains the value.
+
+        Args:
+            column (str): The column to search in.
+            search (str): The value to search for.
+
+        Returns:
+            bool: True if the value was found and highlighted successfully.
+        """
+        self.logger.debug(f"Searching for {search} in {column}")
+        self.offset = 0
+        self.df = duckdb.sql(f"SELECT * FROM '{self.path}' WHERE {column} = '{search}' LIMIT {self.sample_size} OFFSET {self.offset}")
+
+        self.load_data(self.df)
         return True
