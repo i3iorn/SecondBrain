@@ -89,15 +89,15 @@ class ColumnOverviewPanel(BasePanel):
         for i, column in enumerate(df.columns):
             while True:
                 try:
-                    column_values = df[column].limit(rows_to_check).fetchall()
+                    column_values = df[column].limit(rows_to_check).filter(f"CAST({column} AS VARCHAR) <> 'None'").fetchall()
                     break
                 except duckdb.InvalidInputException:
                     continue
 
             self.info_grid.AppendRows(1)
             self.info_grid.SetCellValue(i, 0, column)
-            self.info_grid.SetCellValue(i, 1, f"{len(column_values) / rows_to_check:.2%}")
-            self.info_grid.SetCellValue(i, 2, f"{len(set(column_values))}")
+            self.info_grid.SetCellValue(i, 1, f"{len(column_values) / rows_to_check:.2%}" if column_values is not None else "N/A")
+            self.info_grid.SetCellValue(i, 2, f"{len(set(column_values))}" if column_values is not None else "N/A")
 
         self.info_grid.AutoSize()
         self.Layout()
