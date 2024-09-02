@@ -2,7 +2,9 @@ import wx
 
 from config.colors import *
 from . import PVButton
+from .components.combobox import TVCombobox
 from .components.panel import BasePanel
+from .components.textcntrl import TVTextCntrl
 
 
 class OverviewPanel(BasePanel):
@@ -67,23 +69,27 @@ class OverviewPanel(BasePanel):
         self.search_panel.Show()
 
         self.__setup_column_choices()
+        self.__setup_search_style_combobox()
         self.__setup_search_input()
         self.__setup_search_button()
 
         return True
 
     def __setup_column_choices(self):
-        self.column_choices_label = wx.StaticText(self.search_panel, label="Column: ")
-        self.column_choices = wx.Choice(self.search_panel, choices=[""], size=wx.Size(100, -1))
-        self.search_sizer.Add(self.column_choices_label, 0, wx.ALIGN_CENTER_VERTICAL)
-        self.search_sizer.Add(self.column_choices, 0, wx.ALIGN_CENTER_VERTICAL)
+        self.column_choices = TVCombobox(self.search_panel, choices=[""], size=wx.Size(80, -1))
 
         return True
 
     def __setup_search_input(self):
-        self.search_input = wx.TextCtrl(self.search_panel)
-        self.search_sizer.Add(self.search_input, 1, wx.ALIGN_CENTER_VERTICAL)
+        self.search_input = TVTextCntrl(self.search_panel)
 
+        self.search_input.Bind(wx.EVT_TEXT_ENTER, self.OnSearch)
+
+        return True
+
+    def __setup_search_style_combobox(self):
+        self.search_style_combobox = TVCombobox(self.search_panel, choices=["Exact", "Contains", "Starts With", "Ends With"], size=wx.Size(80, -1))
+        self.search_style_combobox.SetSelection(0)
         return True
 
     def __setup_search_button(self):
@@ -117,9 +123,10 @@ class OverviewPanel(BasePanel):
     def OnSearch(self, event: wx.Event):
         column = self.column_choices.GetStringSelection()
         search = self.search_input.GetValue()
+        style = self.search_style_combobox.GetStringSelection()
 
         self.logger.debug(f"Searching for {search} in {column}")
 
-        self.__plugin.search(column, search)
+        self.__plugin.search(column, search, style)
 
         return True
