@@ -1,4 +1,4 @@
-def status_message(message):
+def status_message(message, pos: int = 0):
     """
     Decorator to set the status bar message in the main window.
 
@@ -13,10 +13,10 @@ def status_message(message):
     """
     def decorator(func):
         def wrapper(self, *args, **kwargs):
-            old_message = self.status_bar.GetStatusText()
-            self.status_bar.SetStatusText(message)
+            old_message = self.status_bar.GetStatusText(pos)
+            self.status_bar.SetStatusText(message, pos)
             result = func(self, *args, **kwargs)
-            self.status_bar.SetStatusText(old_message)
+            self.status_bar.SetStatusText(old_message, pos)
             return result
         return wrapper
     return decorator
