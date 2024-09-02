@@ -5,7 +5,6 @@ import wx
 
 from .components.button import PVButton
 from .components.panel import BasePanel
-from .helpers import status_message
 
 if TYPE_CHECKING:
     from . import TableViewer
@@ -53,46 +52,62 @@ class Pagination(BasePanel):
     """
     BUTTONS = ButtonNames
 
-    def __init__(self, tv: 'TableViewer') -> None:
+    def __init__(self, parent: wx.Panel) -> None:
         """
         Initialize the Pagination Panel.
 
         Args:
-            parent (wx.Panel): The parent panel for the Pagination Panel.
-            plugin (TableViewer): The Table Viewer plugin instance.
+            parent (wx.Panel): The parent panel for the Pagination Panel
         """
-        super().__init__(tv.panel)
-        self.logger = tv.logger.getChild("pagination")
-        self.status_bar = tv.status_bar
-        self.__plugin = tv
-        self.__setup_ui()
-
-    def __setup_ui(self) -> None:
-        """
-        Set up the user interface.
-
-        This method creates the buttons for the Pagination Panel and adds them to the sizer.
-        """
-        self.__sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.SetSizer(self.__sizer)
+        super().__init__(parent)
+        self.SetSizer(wx.BoxSizer(wx.HORIZONTAL))
+        self.logger = parent.logger.getChild("pagination")
 
         for name in self.BUTTONS:
-            self.__create_button(name)
+            func = getattr(self, name.value.lower())
+            button = PVButton(self, label=name.value.title(), callback=func, disabled=True)
+            setattr(self, f"__{name.value.lower()}_button", button)
 
-    def __create_button(self, name: ButtonNames) -> None:
+    @property
+    def offset(self) -> int:
         """
-        Create a pagination button.
+        Get the offset for the Table Viewer.
 
-        This method creates a button for the Pagination Panel with the given name and adds it to the sizer.
+        Returns:
+            int: The offset for the Table Viewer.
+        """
+        return self.Parent.offset
+
+    @offset.setter
+    def offset(self, value: int) -> None:
+        """
+        Set the offset for the Table Viewer.
 
         Args:
-            name (ButtonNames): The name of the button to create.
+            value (int): The new offset for the Table Viewer.
         """
-        func = getattr(self, name.value.lower())
-        button = PVButton(self, label=name.value.title(), callback=func, disabled=True)
-        setattr(self, f"__{name.value.lower()}_button", button)
+        self.Parent.offset = value
 
-    @status_message(f"Loading previous page")
+    @property
+    def sample_size(self) -> int:
+        """
+        Get the sample size for the Table Viewer.
+
+        Returns:
+            int: The sample size for the Table Viewer.
+        """
+        return self.Parent.sample_size
+
+    @property
+    def show_data(self):
+        """
+        Show the data in the Table Viewer.
+
+        Returns:
+            Callable: The `show_data` method in the Table Viewer plugin.
+        """
+        return self.Parent.show_data
+
     def prev(self, event: wx.Event) -> None:
         """
         Go back one page.
@@ -103,17 +118,16 @@ class Pagination(BasePanel):
         Args:
             event (wx.Event): The event that triggered this callback.
         """
-        if self.__plugin.offset - self.__plugin.sample_size < 0:
+        if self.Parent.offset - self.sample_size < 0:
             self.logger.debug("Cannot go back any further")
             return
-        self.__plugin.offset -= self.__plugin.sample_size
+        self.offset -= self.sample_size
 
         getattr(self, "__next_button").enable()
         getattr(self, "__last_button").enable()
 
-        self.__plugin.load_data()
+        self.show_data()
 
-    @status_message(f"Loading next page")
     def next(self, event: wx.Event) -> None:
         """
         Go forward one page.
@@ -124,17 +138,16 @@ class Pagination(BasePanel):
         Args:
             event (wx.Event): The event that triggered this callback.
         """
-        if self.__plugin.offset + self.__plugin.sample_size >= self.__plugin.get_total_rows():
+        if self.offset + self.sample_size >= self.Parent.row_count:
             self.logger.debug("Cannot go forward any further")
             return
-        self.__plugin.offset += self.__plugin.sample_size
+        self.offset += self.sample_size
 
         getattr(self, "__first_button").enable()
         getattr(self, "__prev_button").enable()
 
-        self.__plugin.load_data()
+        self.show_data()
 
-    @status_message(f"Loading first page")
     def first(self, event: wx.Event) -> None:
         """
         Go to the first page.
@@ -145,16 +158,15 @@ class Pagination(BasePanel):
         Args:
             event (wx.Event): The event that triggered this callback.
         """
-        self.__plugin.offset = 0
+        self.offset = 0
 
         getattr(self, "__first_button").disable()
         getattr(self, "__prev_button").disable()
         getattr(self, "__next_button").enable()
         getattr(self, "__last_button").enable()
 
-        self.__plugin.load_data()
+        self.show_data()
 
-    @status_message(f"Loading last page")
     def last(self, event: wx.Event) -> None:
         """
         Go to the last page.
@@ -165,22 +177,21 @@ class Pagination(BasePanel):
         Args:
             event (wx.Event): The event that triggered this callback.
         """
-        if self.__plugin.get_total_rows() < self.__plugin.sample_size:
+        if self.Parent.row_count < self.sample_size:
             self.logger.debug("Cannot go to last page")
             getattr(self, "__last_button").disable()
             getattr(self, "__next_button").disable()
             return
 
-        self.__plugin.offset = self.__plugin.get_total_rows() - self.__plugin.sample_size
+        self.offset = self.Parent.row_count - self.sample_size
 
         getattr(self, "__first_button").enable()
         getattr(self, "__prev_button").enable()
         getattr(self, "__next_button").disable()
         getattr(self, "__last_button").disable()
 
-        self.__plugin.load_data()
+        self.show_data()
 
-    @status_message(f"Activate pagination")
     def activate(self) -> None:
         """
         Activate all buttons.
@@ -191,7 +202,6 @@ class Pagination(BasePanel):
             button = getattr(self, f"__{name.value.lower()}_button")
             button.enable()
 
-    @status_message(f"Deactivate pagination")
     def deactivate(self) -> None:
         """
         Deactivate all buttons.
