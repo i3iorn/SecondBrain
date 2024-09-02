@@ -37,13 +37,9 @@ class GuiApplication(wx.App):
             icon = wx.Icon(icon_path.as_posix())
             self.root_frame.SetIcon(icon)
 
-        # Set window minimum size
-        x, y = wx.DisplaySize()
-        self.root_frame.SetMinSize((x // 2, y // 2))
-
         # Set window size
         size = self.environment.get("application", {}).get("size", {}).get("width", 800), self.environment.get("application", {}).get("size", {}).get("height", 600)
-        self.root_frame.SetSize(size)
+        self.root_frame.SetMinSize(size)
 
         # Set window position
         position = self.environment.get("application", {}).get("position", {}).get("x"), self.environment.get("application", {}).get("position", {}).get("y")
