@@ -2,8 +2,11 @@ application:
   name: "2ndBrain"
   version: "0.1.0"
   size:
-    width: 800
-    height: 600
+    width: 1400
+    height: 800
+  position:
+    x: 100
+    y: 50
   status_bar:
     sub_process:
       height: 20
