@@ -39,6 +39,7 @@ class ColumnOverviewPanel(BasePanel):
         self.status_bar = tv.status_bar
         self.__sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.__sizer)
+        self.SetMaxSize(tv.panel.GetSize())
 
         self.setup_ui()
 
@@ -89,7 +90,7 @@ class ColumnOverviewPanel(BasePanel):
         for i, column in enumerate(df.columns):
             while True:
                 try:
-                    column_values = df[column].limit(rows_to_check).filter(f"CAST({column} AS VARCHAR) <> 'None'").fetchall()
+                    column_values = [value[0] for value in df[column].limit(rows_to_check).fetchall() if value[0] is not None]
                     break
                 except duckdb.InvalidInputException:
                     continue
@@ -97,10 +98,16 @@ class ColumnOverviewPanel(BasePanel):
             self.info_grid.AppendRows(1)
             self.info_grid.SetCellValue(i, 0, column)
             self.info_grid.SetCellValue(i, 1, f"{len(column_values) / rows_to_check:.2%}" if column_values is not None else "N/A")
-            self.info_grid.SetCellValue(i, 2, f"{len(set(column_values))}" if column_values is not None else "N/A")
+
+            if len(set(column_values)) == rows_to_check:
+                self.info_grid.SetCellValue(i, 2, "Unique")
+            elif len(column_values) == 0:
+                self.info_grid.SetCellValue(i, 2, "N/A")
+            else:
+                self.info_grid.SetCellValue(i, 2, f"{len(set(column_values)) / rows_to_check:.2%}")
 
         self.info_grid.AutoSize()
-        self.Layout()
+        self.GetTopLevelParent().Layout()
 
         return True
 
