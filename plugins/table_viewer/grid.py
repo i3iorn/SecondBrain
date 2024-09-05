@@ -104,6 +104,7 @@ class GridPanel(BasePanel):
         for i, row in enumerate(df.fetchall()):
             self.__grid.SetRowLabelValue(i, str(i + 1 + self.offset))
             for j, value in enumerate(row):
+                value = str(value) if value is not None else ""
                 self.__grid.SetCellValue(i, j, str(value))
 
         self.__pagination.activate()
