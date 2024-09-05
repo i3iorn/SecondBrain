@@ -5,3 +5,4 @@ numpy~=2.1.0
 pandas~=1.4.0
 pypinyin~=0.52.0
 pycountry~=24.6.1
+faker~=28.4.1
