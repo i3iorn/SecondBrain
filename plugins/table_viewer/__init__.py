@@ -206,18 +206,10 @@ class TableViewer:
             self.grid.sample_size = self.sample_size
 
             try:
-                self.grid.show_data()
-
-                columns = duckdb.sql(f"SELECT * FROM '{self.path}' LIMIT 1").columns
-
-                if not columns:
-                    self.logger.error("No columns found in file")
-                    return False
-
                 self.grid.df = duckdb.sql(f"SELECT * FROM '{self.path}'")
                 self.column_overview.update()
                 self.grid.show_data()
-                self.overview.update(total_rows=self.grid.row_count, columns=columns)
+                self.overview.update(total_rows=self.grid.row_count, columns=self.grid.df.columns)
 
             except duckdb.InvalidInputException as e:
                 self.logger.error(f"Error loading file: {e}")
@@ -288,6 +280,10 @@ class TableViewer:
             df = self.grid.df.filter(f"CAST({column} as VARCHAR) LIKE '{search}%'")
         elif search_style == "Ends With":
             df = self.grid.df.filter(f"CAST({column} as VARCHAR) LIKE '%{search}'")
+        elif search_style == "Is Empty":
+            df = self.grid.df.filter(f"CAST({column} as VARCHAR) = ''")
+        elif search_style == "Is not Empty":
+            df = self.grid.df.filter(f"CAST({column} as VARCHAR) != ''")
         else:
             df = self.grid.df.filter(f"CAST({column} as VARCHAR) = '{search}'")
 
