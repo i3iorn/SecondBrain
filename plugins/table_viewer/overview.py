@@ -82,14 +82,13 @@ class OverviewPanel(BasePanel):
 
     def __setup_search_input(self):
         self.search_input = TVTextCntrl(self.search_panel)
-
-        self.search_input.Bind(wx.EVT_TEXT_ENTER, self.OnSearch)
-
         return True
 
     def __setup_search_style_combobox(self):
-        self.search_style_combobox = TVCombobox(self.search_panel, choices=["Exact", "Contains", "Starts With", "Ends With"], size=wx.Size(80, -1))
+        self.search_style_combobox = TVCombobox(self.search_panel, choices=["Exact", "Contains", "Starts With", "Ends With", "Is Empty", "Is not Empty"], size=wx.Size(80, -1))
         self.search_style_combobox.SetSelection(0)
+
+        self.search_style_combobox.Bind(wx.EVT_COMBOBOX, self.OnComboSelect)
         return True
 
     def __setup_search_button(self):
@@ -119,6 +118,15 @@ class OverviewPanel(BasePanel):
         self.column_choices.SetSelection(0)
 
         return True
+
+    def OnComboSelect(self, event: wx.Event):
+        if self.search_style_combobox.GetStringSelection() == "Is Empty" or self.search_style_combobox.GetStringSelection() == "Is not Empty":
+            self.search_input.SetValue("")
+            self.search_input.Disable()
+        else:
+            self.search_input.Enable()
+
+        return
 
     def OnSearch(self, event: wx.Event):
         column = self.column_choices.GetStringSelection()
